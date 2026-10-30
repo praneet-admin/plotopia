@@ -81,13 +81,14 @@ export function buildHall(hall, scene) {
   const shell = mesh(new THREE.BoxGeometry(hall.hallW, hall.hallH + 0.2, len), M.shell, 0, hall.hallH / 2 - 0.1, backZ / 2 - 1, { receive: true });
   box(hall.hallW, 0.2, len, M.floor, 0, -0.1, backZ / 2 - 1, { receive: true });
   /* acoustic panels along both side walls, with sconces between them */
+  const houseLights = [];
   for (const sx of [-1, 1]) {
     let i = 0;
     for (let z = 1; z < backZ; z += 1.3, i++) {
       box(0.12, hall.hallH * 0.78, 1.15, i % 2 ? M.panelA : M.panelB, sx * (hall.hallW / 2 - 0.06), hall.hallH * 0.42, z);
       if (i % 4 === 2) {
         box(0.14, 0.28, 0.1, M.sconce, sx * (hall.hallW / 2 - 0.14), 2.6, z);
-        if (i % 8 === 2) { const l = new THREE.PointLight(0xffb070, 6, 9, 1.6); l.position.set(sx * (hall.hallW / 2 - 0.5), 2.7, z); world.add(l); }
+        if (i % 8 === 2) { const l = new THREE.PointLight(0xffb070, 3.5, 9, 1.7); l.position.set(sx * (hall.hallW / 2 - 0.5), 2.7, z); world.add(l); houseLights.push(l); }
       }
     }
     mesh(new THREE.PlaneGeometry(0.9, 0.34), M.exit, sx * (hall.hallW / 2 - 0.13), 2.9, 0.4, { ry: -sx * Math.PI / 2 });
@@ -117,10 +118,17 @@ export function buildHall(hall, scene) {
   box(hall.hallW, scr.bottom + 0.2, 0.3, M.frame, 0, (scr.bottom - 0.2) / 2, -0.3);
 
   /* screen light: a wide spot that washes the audience and casts head shadows */
-  const glow = new THREE.SpotLight(0xbfd8ff, 140, backZ * 2.2, Math.PI / 2.4, 0.8, 1.1);
+  // A real screen is the only big light source in the room: it throws a soft blue-white wash on the first rows
+  // and casts faint head shadows. Kept dim so the seats stay dark, as they are during a film.
+  const glow = new THREE.SpotLight(0xc8dcff, 55, backZ * 2.2, Math.PI / 2.4, 0.9, 1.3);
   glow.position.set(0, scr.cy, 0.3); glow.target.position.set(0, 2, backZ * 0.7);
   glow.castShadow = true; glow.shadow.mapSize.set(2048, 2048); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2;
   world.add(glow, glow.target);
+
+  /* ceiling downlights, dimmed for the show */
+  const dl = new THREE.MeshBasicMaterial({ color: 0x3a2a1c });
+  const dlDim = new THREE.Color(0x3a2a1c), dlOn = new THREE.Color(0xffe2b8);
+  for (let z = 3; z < backZ; z += 3) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) mesh(new THREE.CircleGeometry(0.12, 12), dl, x, hall.hallH - 0.01, z, { rx: Math.PI / 2 });
 
   /* ---------- projector and its beam ---------- */
   const projY = hall.hallH - 0.9, projZ = backZ + 0.7;
@@ -139,6 +147,7 @@ export function buildHall(hall, scene) {
   const dust = new THREE.Points(dustGeo, M.dust); world.add(dust);
 
   /* ---------- seats ---------- */
+  const people = [];
   const geoCache = {};
   const seatTemplate = cat => {
     if (geoCache[cat]) return geoCache[cat];
@@ -170,7 +179,7 @@ export function buildHall(hall, scene) {
       add(new THREE.CylinderGeometry(0.045, 0.05, 0.08, 10), M.skin, lean, 1.1 + tall, 0.02);                       // neck
       add(new THREE.SphereGeometry(0.105, 14, 12), M.skin, lean, EYE_HEIGHT + 0.04 + tall, 0.0);                   // head
       const hair = add(new THREE.SphereGeometry(0.112, 14, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), M.hair, lean, EYE_HEIGHT + 0.05 + tall, -0.01);
-      p.position.set(s.x, s.y, s.z); p.updateMatrixWorld(true); world.add(p);
+      p.position.set(s.x, s.y, s.z); p.userData.phase = Math.random() * 6.28; p.userData.rate = 0.3 + Math.random() * 0.4; people.push(p); p.updateMatrixWorld(true); world.add(p);
       p.traverse(o => { if (o.isMesh) { o.updateMatrixWorld(true); const wp = new THREE.Vector3(); o.getWorldPosition(wp); o.userData.worldZ = wp.z; } });
     }
   }
@@ -189,7 +198,17 @@ export function buildHall(hall, scene) {
     for (const o of seat.softParts) o.material = kind === 'selected' ? M.selected : kind === 'pinned' ? M.pinned : seat.baseMat;
     if (kind === 'selected') { ring.visible = true; ring.position.set(seat.x, seat.y + 0.02, seat.z); } else if (ring.position.x === seat.x && ring.position.z === seat.z) ring.visible = false;
   }
-  function tick(t) { dust.rotation.y = 0; const a = dust.geometry.attributes.position; for (let i = 0; i < dustN; i++) a.array[i * 3 + 1] += Math.sin(t * 0.7 + i) * 0.0006; a.needsUpdate = true; }
+  function tick(t) {
+    for (const p of people) { p.rotation.y = Math.sin(t * p.userData.rate + p.userData.phase) * 0.06; p.rotation.z = Math.sin(t * p.userData.rate * 0.7 + p.userData.phase) * 0.015; }
+    const a = dust.geometry.attributes.position; for (let i = 0; i < dustN; i++) a.array[i * 3 + 1] += Math.sin(t * 0.7 + i) * 0.0006; a.needsUpdate = true; }
 
-  return { hall, scr, seats, pickables, occluders, screenMesh, glow, center, overview, backZ, dispose, highlight, tick };
+  /* House lights: up while you browse the hall, down once you take a seat. */
+  let houseLevel = -1;
+  function setHouse(k) {
+    if (Math.abs(k - houseLevel) < 0.002) return; houseLevel = k;
+    for (const l of houseLights) l.intensity = 3.5 + k * 14;
+    dl.color.copy(dlDim).lerp(dlOn, k);
+    M.sconce.color.setHex(0xffc88a).multiplyScalar(0.6 + k * 0.6);
+  }
+  return { hall, scr, seats, pickables, occluders, screenMesh, glow, center, overview, backZ, dispose, highlight, tick, setHouse };
 }

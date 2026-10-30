@@ -29,30 +29,38 @@ export class ScreenMedia {
   swap(t) { this.texture = t; this.onchange?.(t); }
   drawFrame(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height;
+    /* late-afternoon Thanjavur: warm sky, paddy fields, palms, two figures walking home */
     const sky = g.createLinearGradient(0, 0, 0, h);
-    sky.addColorStop(0, '#0b1b3a'); sky.addColorStop(.55, '#d9663a'); sky.addColorStop(1, '#f7c56a');
+    sky.addColorStop(0, '#2a1a3a'); sky.addColorStop(.45, '#e0683a'); sky.addColorStop(.72, '#f6c35e'); sky.addColorStop(1, '#f9e2a0');
     g.fillStyle = sky; g.fillRect(0, 0, w, h);
-    const sx = w * 0.5 + Math.sin(t * 0.15) * w * 0.12, sy = h * 0.58 + Math.cos(t * 0.1) * 14;
-    const sun = g.createRadialGradient(sx, sy, 10, sx, sy, 180);
-    sun.addColorStop(0, 'rgba(255,240,200,1)'); sun.addColorStop(.3, 'rgba(255,180,90,.8)'); sun.addColorStop(1, 'rgba(255,120,60,0)');
+    const sx = w * 0.62 + Math.sin(t * 0.08) * 20, sy = h * 0.64;
+    const sun = g.createRadialGradient(sx, sy, 8, sx, sy, 160);
+    sun.addColorStop(0, 'rgba(255,245,210,1)'); sun.addColorStop(.25, 'rgba(255,200,110,.85)'); sun.addColorStop(1, 'rgba(255,150,70,0)');
     g.fillStyle = sun; g.fillRect(0, 0, w, h);
-    for (let layer = 0; layer < 3; layer++) {
-      g.fillStyle = ['#2b1a2c', '#1d1220', '#120b14'][layer]; g.beginPath(); g.moveTo(0, h);
-      for (let x = 0; x <= w; x += 40) g.lineTo(x, h * (0.62 + layer * 0.1) - Math.abs(Math.sin(x * 0.011 + layer * 2 + t * 0.02)) * 120 * (1 - layer * 0.2));
-      g.lineTo(w, h); g.closePath(); g.fill();
-    }
-    const rx = w * 0.2 + ((t * 25) % (w * 0.6)), ry = h * 0.74;
-    g.fillStyle = '#000'; g.beginPath(); g.ellipse(rx, ry, 10, 26, 0, 0, Math.PI * 2); g.fill();
-    g.beginPath(); g.arc(rx, ry - 36, 9, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#2f5a2a'; g.fillRect(0, h * 0.7, w, h * 0.3);                       // fields
+    const field = g.createLinearGradient(0, h * 0.7, 0, h); field.addColorStop(0, 'rgba(255,200,90,.35)'); field.addColorStop(1, 'rgba(20,40,20,.6)');
+    g.fillStyle = field; g.fillRect(0, h * 0.7, w, h * 0.3);
+    g.strokeStyle = 'rgba(20,50,20,.5)'; g.lineWidth = 2;
+    for (let i = 0; i < 14; i++) { g.beginPath(); g.moveTo(w * 0.5 + (i - 7) * 10, h * 0.7); g.lineTo(w * 0.5 + (i - 7) * 160, h); g.stroke(); }
+    const palm = (x, y, sc) => {                                                           // palm silhouettes
+      g.strokeStyle = '#1a1210'; g.lineWidth = 6 * sc; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 10 * sc, y - 120 * sc, x + 25 * sc, y - 220 * sc); g.stroke();
+      g.fillStyle = '#1a1210';
+      for (let k = 0; k < 7; k++) { const a = -Math.PI / 2 + (k - 3) * 0.42 + Math.sin(t * 0.6 + k) * 0.03; g.beginPath(); g.moveTo(x + 25 * sc, y - 220 * sc); g.quadraticCurveTo(x + 25 * sc + Math.cos(a) * 60 * sc, y - 220 * sc + Math.sin(a) * 60 * sc - 20 * sc, x + 25 * sc + Math.cos(a) * 110 * sc, y - 220 * sc + Math.sin(a) * 110 * sc + 30 * sc); g.lineTo(x + 25 * sc + Math.cos(a) * 80 * sc, y - 220 * sc + Math.sin(a) * 80 * sc + 10 * sc); g.fill(); }
+    };
+    palm(w * 0.08, h * 0.72, 1.1); palm(w * 0.18, h * 0.71, 0.8); palm(w * 0.9, h * 0.72, 1.0);
+    const walk = (x, y, sc) => { g.fillStyle = '#1a1210'; g.beginPath(); g.ellipse(x, y, 9 * sc, 24 * sc, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.arc(x, y - 33 * sc, 8 * sc, 0, Math.PI * 2); g.fill(); };
+    const wx = w * 0.3 + ((t * 14) % (w * 0.5));
+    walk(wx, h * 0.78, 1.0); walk(wx + 34, h * 0.785, 1.05);
     g.textAlign = 'center';
-    g.fillStyle = 'rgba(255,255,255,.92)'; g.font = '700 86px Georgia,serif'; g.fillText('THE LAST HORIZON', w / 2, h * 0.3);
-    g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '300 28px sans-serif'; g.fillText('A SHOW STUDIOS PICTURE', w / 2, h * 0.36);
-    g.fillStyle = '#fff'; g.font = '600 34px sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
+    g.fillStyle = 'rgba(255,248,230,.95)'; g.font = "800 92px 'Noto Sans Tamil',sans-serif"; g.fillText('மெய்யழகன்', w / 2, h * 0.31);
+    g.fillStyle = 'rgba(255,248,230,.8)'; g.font = '600 30px Inter,sans-serif'; g.fillText('M E I Y A Z H A G A N', w / 2, h * 0.38);
+    g.fillStyle = 'rgba(255,248,230,.7)'; g.font = '400 20px Inter,sans-serif'; g.fillText('KARTHI · ARVIND SWAMY   ·   A FILM BY C. PREM KUMAR   ·   MUSIC GOVIND VASANTHA', w / 2, h * 0.43);
+    g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
     const sub = 'If you can read this subtitle easily, the seat is fine.';
     g.strokeText(sub, w / 2, h * 0.86); g.fillText(sub, w / 2, h * 0.86);
     /* cinematic finish: vignette, film grain and 2.39:1 letterbox bars */
     const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.95);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
     g.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
     const bar = (h - w / 2.39) / 2; g.fillStyle = '#000'; g.fillRect(0, 0, w, bar); g.fillRect(0, h - bar, w, bar);
   }

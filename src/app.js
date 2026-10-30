@@ -1,4 +1,4 @@
-// Show: controller. Owns the renderer, modes (hall / seat / compare), the seat map, media, gyro and share links.
+// Show: controller. One flow: tap a seat → you are in it → look around, hop, compare, proceed.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -23,47 +23,49 @@ stage.prepend(renderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
-scene.add(new THREE.HemisphereLight(0x7a8fb8, 0x2a1a1a, 0.55), new THREE.AmbientLight(0x30303a, 0.5));
+const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.5), ambient = new THREE.AmbientLight(0x3a3238, 0.45);
+scene.add(hemi, ambient);
+let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
 
 const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 160);
 const camB = new THREE.PerspectiveCamera(62, 1, 0.05, 160);   // second viewport in compare mode
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 3; controls.maxDistance = 70;
 
-/* bloom makes the screen, LEDs and exit signs actually glow */
+/* a gentle bloom so the screen and LEDs glow a little, as they do in a dark hall */
 const composer = new EffectComposer(renderer);
-const renderPass = new RenderPass(scene, camera);
-const bloom = new UnrealBloomPass(new THREE.Vector2(1, 1), 0.55, 0.5, 0.82);
-composer.addPass(renderPass); composer.addPass(bloom); composer.addPass(new OutputPass());
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.45, 0.9));
+composer.addPass(new OutputPass());
 
 const media = new ScreenMedia();
 media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = t; state.view.screenMesh.material.needsUpdate = true; } };
 
 /* ---------------- state ---------------- */
-const state = { hallId: 'audi3', view: null, selected: null, pinned: null, mode: 'hall', heat: false, gyro: false, scores: new Map(), flying: null };
+const state = { hallId: 'audi3', view: null, selected: null, pinned: null, picking: false, mode: 'hall', heat: false, gyro: false, scores: new Map(), flying: null };
 const look = { yaw: 0, pitch: 0 }, lookB = { yaw: 0, pitch: 0 };
 const base = { A: new THREE.Euler(0, 0, 0, 'YXZ'), B: new THREE.Euler(0, 0, 0, 'YXZ') };
 const ray = new THREE.Raycaster();
 
 /* ---------------- hall loading ---------------- */
 function loadHall(id, { keepUrl = false } = {}) {
-  state.view?.dispose(); state.selected = state.pinned = null; state.scores.clear();
+  state.view?.dispose(); state.selected = state.pinned = null; state.picking = false; state.scores.clear();
   state.hallId = id;
   const view = buildHall(HALLS[id], scene); state.view = view;
   view.screenMesh.material.map = media.texture; view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
   controls.target.copy(view.center); camera.position.copy(view.overview);
   buildSeatMap(view);
-  $('modeSeat').disabled = $('modeCompare').disabled = $('payBtn').disabled = true; $('pinBtn').classList.remove('on');
-  $('report').hidden = true; $('hudSeat').textContent = 'Tap any seat to see the screen from it';
+  $('payBtn').disabled = true; $('report').hidden = true; $('banner').hidden = true;
+  $('hudSeat').textContent = 'Tap any seat to see the screen from it';
   $('sumSeat').textContent = 'No seat selected'; $('sumPrice').textContent = 'Tap a seat on the map or in the hall';
-  if (state.mode !== 'hall') enterHallView(true);
+  enterHallView(true);
   scoreAllSeats(view).then(() => { if (state.heat) paintHeat(); });
   if (!keepUrl) writeUrl();
   $('loading').hidden = true;
 }
 
-/* Score every seat in idle chunks so the heatmap and "best seat" never block the UI. */
+/* Score every seat in idle chunks so "Best seats" never blocks the UI. */
 function scoreAllSeats(view) {
   return new Promise(resolve => {
     const list = view.seats.slice(); let i = 0;
@@ -87,9 +89,8 @@ function evaluate(seat, view, cols = 9, rows = 5) {
 function buildSeatMap(view) {
   const rowsEl = $('rows'); rowsEl.innerHTML = '';
   const byRow = new Map(); view.seats.forEach(s => (byRow.get(s.row) ?? byRow.set(s.row, []).get(s.row)).push(s));
-  const rowsBackToFront = [...byRow.keys()].reverse();
   let lastCat = null;
-  for (const row of rowsBackToFront) {
+  for (const row of [...byRow.keys()].reverse()) {
     const list = byRow.get(row), cat = list[0].cat;
     if (cat !== lastCat) {
       const h = document.createElement('div'); h.className = 'cat'; h.innerHTML = `<span>${CATEGORIES[cat].name}</span><span>₹${CATEGORIES[cat].price}</span>`; rowsEl.appendChild(h); lastCat = cat;
@@ -114,7 +115,7 @@ function paintHeat() {
 function selectSeat(s) {
   if (s.sold) return;
   const view = state.view;
-  if (state.selected && state.selected !== state.pinned) { state.selected.btn.classList.remove('sel'); view.highlight(state.selected, null); state.selected.mesh.visible = true; }
+  if (state.selected && state.selected !== state.pinned) { state.selected.btn.classList.remove('sel'); view.highlight(state.selected, null); }
   state.selected = s; s.btn.classList.add('sel'); view.highlight(s, 'selected');
   s.btn.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   const r = evaluate(s, view); state.scores.set(s.id, r);
@@ -131,11 +132,10 @@ function selectSeat(s) {
   $('mVis').innerHTML = `${Math.round(vis * 100)}%<small>${vis >= 0.97 ? 'clear' : vis >= 0.9 ? 'a head' : 'blocked'}</small>`;
   const nb = view.seats.filter(o => o.r === s.r && o !== s && Math.abs(o.x - s.x) < CATEGORIES[s.cat].pitch * 1.1);
   $('mNb').innerHTML = `${nb.filter(o => o.sold).length}/${nb.length}<small>taken</small>`;
-  $('payBtn').disabled = $('modeSeat').disabled = false; $('payBtn').textContent = `Proceed · ₹${c.price}`;
-  $('modeCompare').disabled = !state.pinned || state.pinned === s;
+  $('payBtn').disabled = false; $('payBtn').textContent = `Proceed · ₹${c.price}`;
   $('sumSeat').textContent = `${s.id} · ${c.name}`; $('sumPrice').textContent = `1 seat · ₹${c.price} · ${r.verdict.label} view`;
   $('hudSeat').innerHTML = `Row <b>${s.row}</b> · Seat <b>${s.num}</b> · ${c.name} · view score <b>${r.score}</b>`;
-  if (state.mode === 'compare' && state.pinned && state.pinned !== s) enterCompare(); else enterSeatView();
+  if ((state.picking || state.mode === 'compare') && state.pinned && state.pinned !== s) enterCompare(); else enterSeatView();
   writeUrl();
 }
 
@@ -146,27 +146,35 @@ function seatPose(s) {
   const eye = eyeOf(s); const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(eye); tmp.lookAt(0, state.view.scr.cy, 0);
   return { eye, quat: tmp.quaternion.clone() };
 }
+/* In a seat you see your own armrests but not the backrest behind your head. */
+function sitIn(seats) { state.view.seats.forEach(s => s.mesh.traverse(o => { if (o.isMesh) o.visible = true; })); for (const s of seats) s.mesh.traverse(o => { if (o.name === 'back' || o.name === 'headrest') o.visible = false; }); }
+
 function setMode(m) {
   state.mode = m;
-  for (const [id, mm] of [['modeHall', 'hall'], ['modeSeat', 'seat'], ['modeCompare', 'compare']]) $(id).classList.toggle('active', mm === m);
-  $('splitLabels').hidden = m !== 'compare'; $('hudSeat').hidden = m === 'compare' && portrait();
+  $('backBtn').hidden = m === 'hall'; $('nav').hidden = m === 'hall'; $('hint').hidden = m === 'hall';
+  $('splitLabels').hidden = m !== 'compare'; $('topLeft').style.visibility = m === 'compare' && portrait() ? 'hidden' : 'visible';
   $('gyroBtn').hidden = !(m !== 'hall' && 'DeviceOrientationEvent' in window && matchMedia('(pointer:coarse)').matches);
-  $('hint').textContent = m === 'hall' ? 'Drag to orbit · scroll to zoom · tap a seat' : m === 'seat' ? 'Drag to look around · arrow keys hop seats · Esc for hall' : 'Drag either side to look around';
+  const cb = $('compareBtn'); cb.classList.toggle('on', m === 'compare');
+  cb.innerHTML = m === 'compare' ? 'Done<small>keep this seat</small>' : 'Compare<small>with another seat</small>';
   controls.enabled = m === 'hall';
   writeUrl();
 }
 function enterSeatView() {
   if (!state.selected) return;
   const fromHall = state.mode === 'hall';
+  state.picking = false; $('banner').hidden = true;
+  if (state.pinned && state.pinned !== state.selected) { state.view.highlight(state.pinned, null); state.pinned.btn.classList.remove('pin'); }
+  state.pinned = null;
   setMode('seat'); look.yaw = look.pitch = 0;
-  state.view.seats.forEach(s => s.mesh.visible = true); state.selected.mesh.visible = false;
+  sitIn([state.selected]);
   const { eye, quat } = seatPose(state.selected);
   camera.fov = 62; camera.updateProjectionMatrix();
   flyTo(camera, eye, quat, fromHall ? 1300 : 700, () => base.A.setFromQuaternion(quat, 'YXZ'));
 }
 function enterHallView(instant = false) {
-  setMode('hall');
-  state.view.seats.forEach(s => s.mesh.visible = true);
+  state.picking = false; $('banner').hidden = true;
+  if (state.pinned) { if (state.pinned !== state.selected) state.view.highlight(state.pinned, null); state.pinned.btn.classList.remove('pin'); state.pinned = null; }
+  setMode('hall'); sitIn([]);
   const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(state.view.overview); tmp.lookAt(state.view.center);
   camera.fov = 55; camera.updateProjectionMatrix();
   if (instant) { camera.position.copy(state.view.overview); camera.quaternion.copy(tmp.quaternion); controls.update(); }
@@ -174,26 +182,48 @@ function enterHallView(instant = false) {
 }
 function enterCompare() {
   if (!state.pinned || !state.selected || state.pinned === state.selected) return;
+  state.picking = false; $('banner').hidden = true;
   setMode('compare'); look.yaw = look.pitch = lookB.yaw = lookB.pitch = 0;
-  state.view.seats.forEach(s => s.mesh.visible = true); state.pinned.mesh.visible = state.selected.mesh.visible = false;
+  sitIn([state.pinned, state.selected]);
   const A = seatPose(state.pinned), B = seatPose(state.selected);
   camera.fov = 62; camera.updateProjectionMatrix();
   camera.position.copy(A.eye); camera.quaternion.copy(A.quat); base.A.setFromQuaternion(A.quat, 'YXZ');
   camB.position.copy(B.eye); camB.quaternion.copy(B.quat); base.B.setFromQuaternion(B.quat, 'YXZ');
-  const lab = (s, pin) => { const r = state.scores.get(s.id); return `${pin ? '📌 ' : ''}${s.id} · ${CATEGORIES[s.cat].name} · score ${r?.score ?? '…'}`; };
-  $('labA').textContent = lab(state.pinned, true); $('labB').textContent = lab(state.selected, false);
+  const lab = s => { const r = state.scores.get(s.id); return `${s.id} · ${CATEGORIES[s.cat].name} ₹${CATEGORIES[s.cat].price} · score ${r?.score ?? '…'}`; };
+  $('labA').textContent = lab(state.pinned); $('labB').textContent = lab(state.selected);
 }
-
-/* ---------------- toolbar ---------------- */
-$('modeHall').onclick = () => enterHallView(); $('modeSeat').onclick = enterSeatView; $('modeCompare').onclick = enterCompare;
-$('heatBtn').onclick = () => { state.heat = !state.heat; paintHeat(); };
-$('pinBtn').onclick = () => {
+/* Compare button: from a seat, start picking a second seat; in compare, keep the current seat. */
+$('compareBtn').onclick = () => {
+  if (state.mode === 'compare') { enterSeatView(); return; }
   if (!state.selected) return;
-  if (state.pinned) { state.pinned.btn.classList.remove('pin'); if (state.pinned !== state.selected) state.view.highlight(state.pinned, null); }
-  state.pinned = state.selected; state.pinned.btn.classList.add('pin'); state.view.highlight(state.pinned, 'pinned');
-  $('pinBtn').classList.add('on'); toast(`Pinned ${state.pinned.id}. Pick another seat, then hit Compare.`);
-  $('modeCompare').disabled = true;
+  state.picking = true; state.pinned = state.selected; state.pinned.btn.classList.add('pin'); state.view.highlight(state.pinned, 'pinned');
+  $('bannerText').textContent = `Tap another seat to compare it with ${state.pinned.id}`; $('banner').hidden = false;
 };
+$('bannerBtn').onclick = () => { state.picking = false; $('banner').hidden = true; if (state.pinned) { state.pinned.btn.classList.remove('pin'); if (state.pinned === state.selected) state.view.highlight(state.pinned, 'selected'); state.pinned = null; } };
+$('backBtn').onclick = () => enterHallView();
+
+/* seat hopping, shared by the on-screen arrows and the keyboard */
+function hop(dir) {
+  const sel = state.selected; if (!sel) return;
+  const seats = state.view.seats;
+  const nearest = list => list.sort((a, b) => Math.abs(a.x - sel.x) - Math.abs(b.x - sel.x))[0];
+  let cand = null;
+  if (dir === 'left' || dir === 'right') { const d = dir === 'left' ? -1 : 1; cand = nearest(seats.filter(s => s.r === sel.r && !s.sold && Math.sign(s.x - sel.x) === d)); }
+  else { let r = sel.r + (dir === 'up' ? 1 : -1); while (!cand && r >= 0 && r < HALLS[state.hallId].rows.length) { cand = nearest(seats.filter(s => s.r === r && !s.sold)); r += dir === 'up' ? 1 : -1; } }
+  if (cand) selectSeat(cand); else toast(dir === 'left' || dir === 'right' ? 'No free seat that way in this row' : 'No free seats further that way');
+}
+document.querySelectorAll('#nav [data-hop]').forEach(b => b.onclick = () => hop(b.dataset.hop));
+addEventListener('keydown', e => {
+  if (state.mode === 'hall') return;
+  const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
+  if (map[e.key]) { e.preventDefault(); hop(map[e.key]); }
+  if (e.key === 'Escape') enterHallView();
+});
+
+/* ---------------- tools ---------------- */
+$('heatBtn').onclick = () => { state.heat = !state.heat; paintHeat(); if (state.heat) toast('Greener seats have the better view'); };
+$('moreBtn').onclick = e => { e.stopPropagation(); $('moreMenu').hidden = !$('moreMenu').hidden; };
+addEventListener('click', e => { if (!$('tools').contains(e.target)) $('moreMenu').hidden = true; });
 function rankSeats() { return state.view.seats.filter(s => !s.sold).map(s => ({ s, r: state.scores.get(s.id) ?? evaluate(s, state.view, 5, 3) })).sort((a, b) => b.r.score - a.r.score || a.r.g.off - b.r.g.off); }
 $('bestBtn').onclick = () => {
   const ranked = rankSeats();
@@ -209,6 +239,9 @@ stage.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransf
 Object.values(HALLS).forEach(h => { const o = document.createElement('option'); o.value = h.id; o.textContent = `${h.venue} · ${h.name}`; $('hallSelect').appendChild(o); });
 $('hallSelect').onchange = e => loadHall(e.target.value);
 document.querySelectorAll('.time').forEach(b => b.onclick = () => { document.querySelectorAll('.time').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
+$('helpBtn').onclick = () => { $('coach').hidden = false; };
+$('coachBtn').onclick = () => { $('coach').hidden = true; try { localStorage.setItem('show.coach', '1'); } catch {} };
+try { if (!localStorage.getItem('show.coach')) $('coach').hidden = false; } catch { $('coach').hidden = false; }
 
 let toastTimer; function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2600); }
 
@@ -232,7 +265,7 @@ $('gyroBtn').onclick = async () => {
 /* ---------------- pointer: pick in hall, look in seat/compare ---------------- */
 const ptr = new THREE.Vector2(); let down = null, drag = null;
 renderer.domElement.addEventListener('pointerdown', e => {
-  down = { x: e.clientX, y: e.clientY };
+  down = { x: e.clientX, y: e.clientY, t: performance.now() };
   if (state.mode !== 'hall') {
     const r = renderer.domElement.getBoundingClientRect();
     const second = portrait() ? e.clientY - r.top > r.height / 2 : e.clientX - r.left > r.width / 2;
@@ -247,27 +280,19 @@ renderer.domElement.addEventListener('pointermove', e => {
 });
 renderer.domElement.addEventListener('pointerup', e => {
   drag = null;
-  if (!down || state.mode !== 'hall' || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 6) return;
+  const d = down; down = null;
+  if (!d || state.mode !== 'hall' || Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 || performance.now() - d.t > 600) return;
   const r = renderer.domElement.getBoundingClientRect();
   ptr.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
   ray.setFromCamera(ptr, camera); ray.far = Infinity;
   const hit = ray.intersectObjects(state.view.pickables, false)[0];
   if (hit) { const s = hit.object.userData.seat; s.sold ? toast(`${s.id} is already sold`) : selectSeat(s); }
 });
-addEventListener('keydown', e => {
-  if (state.mode === 'hall' || !state.selected) return;
-  const sel = state.selected, seats = state.view.seats; let cand = null;
-  const nearest = list => list.sort((a, b) => Math.abs(a.x - sel.x) - Math.abs(b.x - sel.x))[0];
-  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { const d = e.key === 'ArrowLeft' ? -1 : 1; cand = nearest(seats.filter(s => s.r === sel.r && !s.sold && Math.sign(s.x - sel.x) === d)); }
-  if (e.key === 'ArrowUp' || e.key === 'ArrowDown') cand = nearest(seats.filter(s => s.r === sel.r + (e.key === 'ArrowUp' ? 1 : -1) && !s.sold));
-  if (e.key === 'Escape') enterHallView();
-  if (cand) { e.preventDefault(); selectSeat(cand); }
-});
 
 /* ---------------- share links ---------------- */
 function writeUrl() {
   const p = new URLSearchParams({ hall: state.hallId }); if (state.selected) p.set('seat', state.selected.id); if (state.mode !== 'hall') p.set('view', state.mode);
-  if (state.pinned) p.set('pin', state.pinned.id);
+  if (state.mode === 'compare' && state.pinned) p.set('pin', state.pinned.id);
   history.replaceState(null, '', '#' + p);
 }
 function readUrl() {
@@ -275,9 +300,9 @@ function readUrl() {
   const hall = HALLS[p.get('hall')] ? p.get('hall') : 'audi3';
   loadHall(hall, { keepUrl: true });
   const find = id => state.view.seats.find(s => s.id === id && !s.sold);
-  const pin = find(p.get('pin')); if (pin) { selectSeat(pin); $('pinBtn').onclick(); }
-  const seat = find(p.get('seat')); if (seat) selectSeat(seat);
-  if (p.get('view') === 'compare' && seat && pin) enterCompare();
+  const seat = find(p.get('seat')), pin = find(p.get('pin'));
+  if (pin && seat && pin !== seat) { selectSeat(pin); $('compareBtn').onclick(); selectSeat(seat); }
+  else if (seat) selectSeat(seat);
   if (p.get('view') === 'hall' || !seat) enterHallView(true);
 }
 
@@ -296,6 +321,8 @@ function resizeIfNeeded() { if (lastAspectMode !== state.mode) { lastAspectMode 
 
 renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
+  const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
+  hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
