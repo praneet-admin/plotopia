@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/app.js --bundle --minify --format=iife --target=es2018,safari13,chrome70 --outfile=dist/app.js --legal-comments=none",
+    "build": "esbuild src/app.js --bundle --minify --format=iife --target=es2018,safari13,chrome70 --outfile=dist/app.js --legal-comments=none && node scripts/stamp.mjs",
     "dev": "python3 -m http.server 8792"
   },
   "dependencies": {
