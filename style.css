@@ -153,3 +153,39 @@ aside{background:var(--panel);border-left:1px solid var(--line);display:flex;fle
   #nav button small{font-size:9px}
   #banner{top:54px;font-size:12.5px;max-width:94vw;white-space:normal;text-align:left}
 }
+
+/* ---------- checkout sheet & ticket ---------- */
+#checkout{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:9;padding:12px}
+.sheet{position:relative;background:var(--panel2);border:1px solid var(--line);border-radius:18px;width:min(420px,100%);max-height:calc(100dvh - 24px);overflow:auto;padding:20px 20px 16px;box-shadow:0 24px 70px rgba(0,0,0,.6)}
+.sheet .x{position:absolute;right:10px;top:8px;border:0;background:transparent;color:var(--muted);font-size:26px;cursor:pointer;line-height:1}
+.sheetHead{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:10px}
+.eyebrow{font-size:12px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.eyebrow.ok{color:#46d39a}
+.sheet h2{margin:2px 0 0;font-size:26px}
+.hold{font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;white-space:nowrap}
+.hold b{color:var(--accent);font-variant-numeric:tabular-nums}
+.order{display:flex;flex-direction:column;gap:2px;font-size:13px;color:var(--muted);margin-bottom:14px}
+.order b{color:var(--text);font-size:14px}
+.qrWrap{position:relative;width:236px;height:236px;margin:0 auto 12px;background:#fff;border-radius:14px;padding:8px;display:grid;place-items:center}
+.qrWrap canvas{display:block}
+.gpayMark{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.gpayMark i{width:44px;height:44px;border-radius:50%;background:#fff;border:2px solid #ddd;display:block;position:relative}
+.gpayMark i::after{content:'';position:absolute;inset:9px;border-radius:50%;background:conic-gradient(#4285f4 0 25%,#34a853 0 50%,#fbbc04 0 75%,#ea4335 0)}
+.upiRow{display:flex;align-items:center;gap:8px;justify-content:center;font-size:13px;color:var(--muted);margin-bottom:12px}
+.upiRow code{color:var(--text);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:13px}
+.mini{border:1px solid var(--line);background:transparent;color:var(--accent);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer}
+.gpay{width:100%;border:0;border-radius:10px;padding:12px;background:#fff;color:#1f1f1f;font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer}
+.gLogo{width:20px;height:20px;border-radius:50%;background:conic-gradient(#4285f4 0 25%,#34a853 0 50%,#fbbc04 0 75%,#ea4335 0)}
+.hint{font-size:12.5px;color:var(--muted);text-align:center;margin:10px 0}
+.pay.wide{width:100%;padding:13px;font-size:15px}
+.link{width:100%;border:0;background:transparent;color:var(--muted);padding:10px;cursor:pointer;font-size:13px}
+.fine{font-size:11px;color:#6f6f7a;text-align:center;margin:4px 0 0}
+.ticket{background:#fff;color:#1b1b1f;border-radius:14px;padding:14px;margin:12px 0}
+.tkRow{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #cfcfd6;padding-bottom:10px;margin-bottom:10px}
+.tkRow div,.tkQr>div{display:flex;flex-direction:column;gap:2px}
+.ticket span{font-size:11px;color:#6b7280;text-transform:uppercase;letter-spacing:.4px}
+.ticket b{font-size:15px}
+.tkQr{display:flex;gap:14px;align-items:center}
+.tkQr canvas{border-radius:8px}
+.tkQr>div{gap:6px;min-width:0}
+.ticket b{word-break:break-word}

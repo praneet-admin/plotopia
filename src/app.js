@@ -9,6 +9,7 @@ import { HALLS, CATEGORIES } from './halls.js';
 import { buildHall } from './scene.js';
 import { geometry, visibility, score, verdict, scoreColor, eyeOf } from './metrics.js';
 import { ScreenMedia } from './media.js';
+import { openCheckout } from './payment.js';
 
 const $ = id => document.getElementById(id);
 const stage = $('stage');
@@ -237,7 +238,12 @@ $('bestBtn').onclick = () => {
   ranked.slice(0, 6).forEach(x => x.s.btn.classList.add('best'));
   selectSeat(ranked[0].s);
 };
-$('payBtn').onclick = () => { const s = state.selected; toast(`Demo: would proceed to payment for ${s.id} · ₹${CATEGORIES[s.cat].price}`); };
+$('payBtn').onclick = () => {
+  const s = state.selected; if (!s) return; const h = HALLS[state.hallId];
+  const time = document.querySelector('.time.active')?.textContent ?? '7:30 PM';
+  openCheckout({ movie: 'Meiyazhagan', seat: s.id, cat: CATEGORIES[s.cat].name, hall: `${h.venue} · ${h.name}`, hallId: h.id, time: `Today · ${time}`, amount: CATEGORIES[s.cat].price },
+    ticket => { s.sold = true; s.btn.classList.remove('sel'); s.btn.classList.add('sold'); s.btn.disabled = true; $('payBtn').disabled = true; $('sumSeat').textContent = `${s.id} booked · ${ticket.ref}`; $('sumPrice').textContent = 'Ticket saved on this device'; });
+};
 $('shareBtn').onclick = async () => { writeUrl(); try { await navigator.clipboard.writeText(location.href); toast('Link copied'); } catch { toast(location.href); } };
 $('mediaInput').onchange = e => { const f = e.target.files[0]; if (f) media.load(f).then(() => toast(`Now screening ${f.name}`)); };
 stage.addEventListener('dragover', e => e.preventDefault());

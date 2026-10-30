@@ -68,6 +68,32 @@
     <div id="hint">Drag to look around</div>
     <div id="toast" hidden></div>
     <div id="loading"><div class="spin"></div>Setting up the hall…</div>
+    <div id="checkout" hidden>
+      <div class="sheet">
+        <button class="x" id="payClose" aria-label="Close">×</button>
+        <section id="payStep">
+          <div class="sheetHead"><div><div class="eyebrow">Pay with UPI</div><h2 id="payAmount">₹250</h2></div><div class="hold">Seat held <b id="payTimer">08:00</b></div></div>
+          <div class="order"><b id="payMovie"></b><span id="paySeat"></span><span id="payTime"></span></div>
+          <div class="qrWrap"><canvas id="payQr" width="220" height="220"></canvas><div class="gpayMark"><i></i></div></div>
+          <div class="upiRow"><span>UPI ID</span><code id="payUpi"></code><button id="copyUpi" class="mini">Copy</button></div>
+          <button id="gpayBtn" class="gpay"><span class="gLogo"></span>Pay with Google Pay</button>
+          <p class="hint" id="payHint">Google Pay only during the test. Scan the code or tap the button, pay the exact amount, then confirm below.</p>
+          <button id="paidBtn" class="pay wide">I've paid</button>
+          <button id="payCancel" class="link">Cancel</button>
+          <p class="fine">Test mode: payment is confirmed by you, not by the bank. Ref <span id="payRef"></span></p>
+        </section>
+        <section id="ticketStep" hidden>
+          <div class="eyebrow ok">Booking confirmed</div>
+          <h2 id="tkMovie"></h2>
+          <div class="ticket">
+            <div class="tkRow"><div><span>Seat</span><b id="tkSeat"></b></div><div><span>Hall</span><b id="tkHall"></b></div><div><span>Show</span><b id="tkTime"></b></div></div>
+            <div class="tkQr"><canvas id="ticketQr" width="160" height="160"></canvas><div><span>Booking ID</span><b id="tkRef"></b><span>Paid</span><b id="tkAmount"></b></div></div>
+          </div>
+          <p class="hint">Show this QR at the entrance. A copy is saved on this device.</p>
+          <button id="ticketDone" class="pay wide">Done</button>
+        </section>
+      </div>
+    </div>
     <div id="coach" hidden>
       <div class="coachCard">
         <h2>See the screen from your seat</h2>
