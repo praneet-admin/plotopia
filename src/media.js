@@ -8,6 +8,13 @@ export class ScreenMedia {
     this.canvasTex = new THREE.CanvasTexture(this.canvas); this.canvasTex.colorSpace = THREE.SRGBColorSpace;
     this.texture = this.canvasTex; this.video = null; this.last = 0;
     this.onchange = null;
+    this.poster = null;
+  }
+  /** Official poster, fetched at runtime (not stored in this repo). Falls back to the drawn title card. */
+  loadPoster(url) {
+    const img = new Image(); img.crossOrigin = 'anonymous';
+    img.onload = () => { this.poster = img; };
+    img.src = url;
   }
   tick(now) {
     if (this.video) return;                       // VideoTexture updates itself
@@ -29,6 +36,7 @@ export class ScreenMedia {
   swap(t) { this.texture = t; this.onchange?.(t); }
   drawFrame(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height;
+    if (this.poster) return this.drawPoster(t);
     /* late-afternoon Thanjavur: warm sky, paddy fields, palms, two figures walking home */
     const sky = g.createLinearGradient(0, 0, 0, h);
     sky.addColorStop(0, '#2a1a3a'); sky.addColorStop(.45, '#e0683a'); sky.addColorStop(.72, '#f6c35e'); sky.addColorStop(1, '#f9e2a0');
@@ -63,5 +71,24 @@ export class ScreenMedia {
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
     g.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
     const bar = (h - w / 2.39) / 2; g.fillStyle = '#000'; g.fillRect(0, 0, w, bar); g.fillRect(0, h - bar, w, bar);
+  }
+  drawPoster(t) {
+    const g = this.ctx, w = this.canvas.width, h = this.canvas.height, p = this.poster;
+    /* blurred, darkened poster fills the frame; the sharp poster sits centred, as a pre-show slide would */
+    g.save(); g.filter = 'blur(28px) brightness(.45)';
+    const cover = Math.max(w / p.width, h / p.height) * 1.15;
+    g.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
+    g.restore();
+    const ph = h * 0.86, pw = ph * p.width / p.height, px = (w - pw) / 2, py = (h - ph) / 2;
+    g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 40; g.fillStyle = '#000'; g.fillRect(px, py, pw, ph); g.shadowBlur = 0;
+    g.drawImage(p, px, py, pw, ph);
+    g.textAlign = 'left'; g.fillStyle = 'rgba(255,248,230,.95)'; g.font = "800 44px 'Noto Sans Tamil',sans-serif"; g.fillText('மெய்யழகன்', px + pw + 50, h * 0.42);
+    g.fillStyle = 'rgba(255,248,230,.75)'; g.font = '600 24px Inter,sans-serif'; g.fillText('MEIYAZHAGAN', px + pw + 52, h * 0.48);
+    g.font = '400 18px Inter,sans-serif'; g.fillText('Karthi · Arvind Swamy', px + pw + 52, h * 0.54); g.fillText('A film by C. Prem Kumar', px + pw + 52, h * 0.585);
+    g.fillStyle = 'rgba(255,248,230,.6)'; g.font = '500 20px Inter,sans-serif'; g.fillText('NOW SHOWING', px + pw + 52, h * 0.34);
+    const dot = 0.5 + 0.5 * Math.sin(t * 2); g.fillStyle = `rgba(229,49,74,${dot})`; g.beginPath(); g.arc(px + pw + 40, h * 0.33, 6, 0, Math.PI * 2); g.fill();
+    g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
+    const sub = 'If you can read this subtitle easily, the seat is fine.';
+    g.strokeText(sub, w / 2, h * 0.95); g.fillText(sub, w / 2, h * 0.95);
   }
 }

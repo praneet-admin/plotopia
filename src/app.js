@@ -39,6 +39,10 @@ composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.45, 0.9));
 composer.addPass(new OutputPass());
 
 const media = new ScreenMedia();
+// Official poster via Wikipedia's fair-use copy; a licensed, higher-resolution image from the distributor should replace this URL in production.
+const POSTER_URL = 'https://upload.wikimedia.org/wikipedia/en/1/1c/Meiyazhagan_poster.jpg';
+media.loadPoster(POSTER_URL);
+const posterImg = document.getElementById('posterImg'); posterImg.src = POSTER_URL; posterImg.onerror = () => posterImg.remove();
 media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = t; state.view.screenMesh.material.needsUpdate = true; } };
 
 /* ---------------- state ---------------- */
