@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Show: preview exactly how the cinema screen looks from any seat before you book it.">
+<title>Show · See the screen from your seat</title>
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand">Show</div>
+    <select id="hallSelect" aria-label="Choose hall"></select>
+    <div class="showtime">The Last Horizon · 2D · 7:30 PM</div>
+    <div class="spacer"></div>
+    <div class="seg" role="tablist">
+      <button id="modeHall" class="active">Hall</button>
+      <button id="modeSeat" disabled>Seat view</button>
+      <button id="modeCompare" disabled>Compare</button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <div id="hud">
+      <div class="chip" id="hudSeat">Pick a seat to preview the screen from it</div>
+      <div class="chip hudTools">
+        <button class="tb" id="heatBtn" title="Colour every seat by its score">Heatmap</button>
+        <button class="tb" id="pinBtn" title="Pin this seat, then pick another to compare" disabled>Pin to compare</button>
+        <button class="tb" id="gyroBtn" title="Look around by moving your phone" hidden>Gyro</button>
+        <label class="tb" title="Put your own trailer frame or clip on the screen">Trailer <input id="mediaInput" type="file" accept="image/*,video/*" hidden></label>
+        <button class="tb" id="shareBtn" title="Copy a link to this exact seat">Share</button>
+      </div>
+    </div>
+    <div id="splitLabels" hidden><span id="labA"></span><span id="labB"></span></div>
+    <button class="btn ghost" id="back" hidden>← Back to hall</button>
+    <div id="hint">Drag to orbit · scroll to zoom · click a seat in 3D or on the map</div>
+    <div id="toast" hidden></div>
+    <div id="loading">Loading hall…</div>
+  </div>
+
+  <aside>
+    <div id="seatmap">
+      <div class="screenbar"></div>
+      <div class="rows" id="rows"></div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div id="card">
+      <div id="empty">Select a seat to see distance, viewing angle, how much of the screen is hidden behind heads, and a comfort score. Or let Show find the <b>best available seat</b>.</div>
+      <div id="details" hidden>
+        <div class="titleRow"><div><h3 id="cTitle"></h3><div class="sub" id="cSub"></div></div><div class="score" id="cScore"></div></div>
+        <p class="verdict" id="cVerdict"></p>
+        <div class="metrics">
+          <div class="m"><div class="k">Distance to screen</div><div class="v" id="mDist"></div></div>
+          <div class="m"><div class="k">Screen fills your view</div><div class="v" id="mFov"></div></div>
+          <div class="m"><div class="k">Off-centre</div><div class="v" id="mOff"></div></div>
+          <div class="m"><div class="k">Look-up angle</div><div class="v" id="mUp"></div></div>
+          <div class="m"><div class="k">Screen visible past heads</div><div class="v" id="mVis"></div></div>
+          <div class="m"><div class="k">Neighbours</div><div class="v" id="mNb"></div></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="bestBtn">Best available</button>
+        <button class="btn" id="viewBtn" disabled>View from seat</button>
+        <button class="btn book" id="bookBtn" disabled>Book</button>
+      </div>
+    </div>
+  </aside>
+</div>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
