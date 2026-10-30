@@ -49,6 +49,11 @@ export class ScreenMedia {
     g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '300 28px sans-serif'; g.fillText('A SHOW STUDIOS PICTURE', w / 2, h * 0.36);
     g.fillStyle = '#fff'; g.font = '600 34px sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
     const sub = 'If you can read this subtitle easily, the seat is fine.';
-    g.strokeText(sub, w / 2, h * 0.93); g.fillText(sub, w / 2, h * 0.93);
+    g.strokeText(sub, w / 2, h * 0.86); g.fillText(sub, w / 2, h * 0.86);
+    /* cinematic finish: vignette, film grain and 2.39:1 letterbox bars */
+    const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.95);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.55)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
+    const bar = (h - w / 2.39) / 2; g.fillStyle = '#000'; g.fillRect(0, 0, w, bar); g.fillRect(0, h - bar, w, bar);
   }
 }
