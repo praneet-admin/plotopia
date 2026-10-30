@@ -322,7 +322,7 @@ function resizeIfNeeded() { if (lastAspectMode !== state.mode) { lastAspectMode 
 renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; state.view?.setHouse(house);
+  hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; renderer.toneMappingExposure = 1 + house * 0.7; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
