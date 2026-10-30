@@ -115,7 +115,7 @@ aside{background:var(--panel);border-left:1px solid var(--line);display:flex;fle
   .chips{display:flex;overflow-x:auto;gap:6px;padding-bottom:2px;scrollbar-width:none}
   .chip{flex:0 0 auto;min-width:92px}
   #hint{display:none}
-  .hud{left:10px;bottom:10px;font-size:12px}
+  .hud{font-size:12px}
   #legend{gap:10px;font-size:11px}
   #bar{padding:10px 12px}
 }
