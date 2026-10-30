@@ -1,4 +1,4 @@
-# Show — see the screen from your seat
+# Plotopia — see the screen from your seat
 
 A 3D seat-preview for movie-booking sites. Click any seat on the map (or in the hall) and the camera drops into that seat's eye position, looking at the screen, so a buyer knows exactly what they are paying for.
 

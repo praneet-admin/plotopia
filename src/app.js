@@ -1,4 +1,4 @@
-// Show: controller. One flow: tap a seat → you are in it → look around, hop, compare, proceed.
+// Plotopia: controller. One flow: tap a seat → you are in it → look around, hop, compare, proceed.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -15,7 +15,7 @@ const stage = $('stage');
 
 /* ---------------- renderer, scene, cameras ---------------- */
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -64,9 +64,11 @@ function loadHall(id, { keepUrl = false } = {}) {
   $('hudSeat').textContent = 'Tap any seat to see the screen from it';
   $('sumSeat').textContent = 'No seat selected'; $('sumPrice').textContent = 'Tap a seat on the map or in the hall';
   enterHallView(true);
+  renderer.compile(scene, camera);   // build every shader now, not on the first frame it is needed
   scoreAllSeats(view).then(() => { if (state.heat) paintHeat(); });
   if (!keepUrl) writeUrl();
   $('loading').hidden = true;
+  fpsWindowStart = 0; frameCount = 0; slowWindows = 0; warmUntil = performance.now() + 5000;
 }
 
 /* Score every seat in idle chunks so "Best seats" never blocks the UI. */
@@ -83,7 +85,8 @@ function scoreAllSeats(view) {
 }
 function evaluate(seat, view, cols = 9, rows = 5) {
   const g = geometry(seat, view.scr);
-  const occ = view.occluders.filter(o => o.userData.worldZ < seat.z - 0.3);   // only things in front can block
+  // only things in front, nearby and within a few rows can block the screen
+  const occ = view.occluders.filter(o => o.userData.worldZ < seat.z - 0.3 && o.userData.worldZ > seat.z - 9 && Math.abs(o.userData.worldX - seat.x) < 3.2);
   const vis = visibility(seat, view.scr, occ, ray, cols, rows);
   const s = score(g, vis.visible);
   return { g, vis, score: s, verdict: verdict(g, vis.visible, s) };
@@ -151,7 +154,7 @@ function seatPose(s) {
   return { eye, quat: tmp.quaternion.clone() };
 }
 /* In a seat you see your own armrests but not the backrest behind your head. */
-function sitIn(seats) { state.view.seats.forEach(s => s.mesh.traverse(o => { if (o.isMesh) o.visible = true; })); for (const s of seats) s.mesh.traverse(o => { if (o.name === 'back' || o.name === 'headrest') o.visible = false; }); }
+function sitIn() {}   // your own backrest sits behind the camera, nothing to hide
 
 function setMode(m) {
   state.mode = m;
@@ -243,8 +246,8 @@ Object.values(HALLS).forEach(h => { const o = document.createElement('option'); 
 $('hallSelect').onchange = e => loadHall(e.target.value);
 document.querySelectorAll('.time').forEach(b => b.onclick = () => { document.querySelectorAll('.time').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
 $('helpBtn').onclick = () => { $('coach').hidden = false; };
-$('coachBtn').onclick = () => { $('coach').hidden = true; try { localStorage.setItem('show.coach', '1'); } catch {} };
-try { if (!localStorage.getItem('show.coach')) $('coach').hidden = false; } catch { $('coach').hidden = false; }
+$('coachBtn').onclick = () => { $('coach').hidden = true; try { localStorage.setItem('plotopia.coach', '1'); } catch {} };
+try { if (!localStorage.getItem('plotopia.coach')) $('coach').hidden = false; } catch { $('coach').hidden = false; }
 
 let toastTimer; function toast(msg) { const t = $('toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => t.hidden = true, 2600); }
 
@@ -322,7 +325,22 @@ new ResizeObserver(resize).observe(stage);
 let lastAspectMode = null;
 function resizeIfNeeded() { if (lastAspectMode !== state.mode) { lastAspectMode = state.mode; resize(); } }
 
+/* Adaptive quality: if the device cannot hold a smooth frame rate, drop bloom, shadows and resolution. */
+let quality = 'high', frameCount = 0, fpsWindowStart = 0, slowWindows = 0, warmUntil = 0;
+function setQuality(q) {
+  if (q === quality) return; quality = q;
+  const low = q === 'low';
+  renderer.shadowMap.enabled = !low; scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+  renderer.setPixelRatio(low ? 1 : Math.min(devicePixelRatio, 1.5)); resize();
+  if (low) toast('Lighter graphics mode for smoother motion');
+}
 renderer.setAnimationLoop(now => {
+  if (!fpsWindowStart) fpsWindowStart = now; frameCount++;
+  if (now - fpsWindowStart > 2000) {
+    const fps = frameCount / ((now - fpsWindowStart) / 1000);
+    if (now > warmUntil && !state.flying && document.visibilityState === 'visible') { slowWindows = fps < 24 ? slowWindows + 1 : 0; if (slowWindows >= 2 && quality === 'high') setQuality('low'); }
+    frameCount = 0; fpsWindowStart = now;
+  }
   media.tick(now); state.view?.tick(now / 1000);
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
   hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; renderer.toneMappingExposure = 1 + house * 0.7; state.view?.setHouse(house);
@@ -347,7 +365,7 @@ renderer.setAnimationLoop(now => {
       renderer.setViewport(w / 2, 0, w / 2, h); renderer.setScissor(w / 2, 0, w / 2, h); renderer.render(scene, camB);
     }
     renderer.setScissorTest(false);
-  } else { renderer.setViewport(0, 0, w, h); composer.render(); }
+  } else { renderer.setViewport(0, 0, w, h); if (quality === 'low') renderer.render(scene, camera); else composer.render(); }
 });
 
 readUrl();

@@ -18,7 +18,7 @@ export class ScreenMedia {
   }
   tick(now) {
     if (this.video) return;                       // VideoTexture updates itself
-    if (now - this.last < 80) return; this.last = now;
+    if (now - this.last < (this.poster ? 250 : 80)) return; this.last = now;
     this.drawFrame(now / 1000); this.canvasTex.needsUpdate = true;
   }
   async load(file) {
@@ -74,11 +74,15 @@ export class ScreenMedia {
   }
   drawPoster(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height, p = this.poster;
-    /* blurred, darkened poster fills the frame; the sharp poster sits centred, as a pre-show slide would */
-    g.save(); g.filter = 'blur(28px) brightness(.45)';
-    const cover = Math.max(w / p.width, h / p.height) * 1.15;
-    g.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
-    g.restore();
+    /* blurred, darkened poster fills the frame (rendered once and cached: canvas blur is expensive) */
+    if (!this.bgCache || this.bgCache.src !== p) {
+      const bg = document.createElement('canvas'); bg.width = w; bg.height = h; const bgx = bg.getContext('2d');
+      bgx.filter = 'blur(28px) brightness(.45)';
+      const cover = Math.max(w / p.width, h / p.height) * 1.15;
+      bgx.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
+      this.bgCache = { src: p, canvas: bg };
+    }
+    g.drawImage(this.bgCache.canvas, 0, 0);
     const ph = h * 0.86, pw = ph * p.width / p.height, px = (w - pw) / 2, py = (h - ph) / 2;
     g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 40; g.fillStyle = '#000'; g.fillRect(px, py, pw, ph); g.shadowBlur = 0;
     g.drawImage(p, px, py, pw, ph);
