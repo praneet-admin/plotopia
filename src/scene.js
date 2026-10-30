@@ -52,6 +52,7 @@ const M = {
   fabric: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, roughness: 0.95 }),
   fabricPrime: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, color: 0xb0a0a8, roughness: 0.95 }),
   leather: new THREE.MeshPhysicalMaterial({ color: 0x17171a, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35, bumpMap: fabricBump, bumpScale: 0.002 }),
+  leatherLite: new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5 }),
   plastic: new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.45, metalness: 0.1 }),
   steel: new THREE.MeshStandardMaterial({ color: 0x8c8c90, roughness: 0.35, metalness: 0.9 }),
   led: new THREE.MeshBasicMaterial({ color: 0x9fd8ff }),
@@ -71,7 +72,8 @@ const M = {
 };
 const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'person', 'hair', 'skin', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
-export function buildHall(hall, scene) {
+export function buildHall(hall, scene, { lite = false } = {}) {
+  if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
   const world = new THREE.Group(); scene.add(world);
   const scr = screenOf(hall);
   const seats = layoutSeats(hall);
@@ -131,7 +133,7 @@ export function buildHall(hall, scene) {
   /* A real screen is the only big light source in the room: a soft wash on the front rows with faint head shadows. */
   const glow = new THREE.SpotLight(0xc8dcff, 55, backZ * 2.2, Math.PI / 2.4, 0.9, 1.3);
   glow.position.set(0, scr.cy, 0.3); glow.target.position.set(0, 2, backZ * 0.7);
-  glow.castShadow = true; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2;
+  glow.castShadow = !lite; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2;
   world.add(glow, glow.target);
 
   /* ---------- projector and its beam ---------- */
@@ -158,8 +160,9 @@ export function buildHall(hall, scene) {
     const soft = rec ? 'leather' : cat === 'prime' ? 'fabricPrime' : 'fabric';
     const parts = [];
     const part = (geo, key, x, y, z, rx = 0, name = '') => parts.push({ geo, key, x, y, z, rx, name });
-    part(new RoundedBoxGeometry(w - 0.1, 0.16, d - 0.08, 3, 0.05), soft, 0, 0.46, -0.02, -0.08, 'cushion');
-    part(new RoundedBoxGeometry(w - 0.1, rec ? 0.78 : 0.62, 0.13, 3, 0.05), soft, 0, 0.46 + (rec ? 0.42 : 0.34), d / 2 - 0.08, 0.2, 'back');
+    const seg = lite ? 1 : 3;
+    part(new RoundedBoxGeometry(w - 0.1, 0.16, d - 0.08, seg, 0.05), soft, 0, 0.46, -0.02, -0.08, 'cushion');
+    part(new RoundedBoxGeometry(w - 0.1, rec ? 0.78 : 0.62, 0.13, seg, 0.05), soft, 0, 0.46 + (rec ? 0.42 : 0.34), d / 2 - 0.08, 0.2, 'back');
     if (rec) part(new RoundedBoxGeometry(w - 0.18, 0.18, 0.1, 2, 0.04), soft, 0, 1.22, d / 2 - 0.02, 0.2, 'headrest');
     if (rec) part(new RoundedBoxGeometry(w - 0.14, 0.1, 0.4, 2, 0.03), soft, 0, 0.36, -d / 2 - 0.1, 0.3, 'footrest');
     for (const sx of [-1, 1]) {

@@ -15,12 +15,21 @@ const $ = id => document.getElementById(id);
 const stage = $('stage');
 
 /* ---------------- renderer, scene, cameras ---------------- */
-const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+const PHONE = matchMedia('(pointer:coarse)').matches && Math.min(screen.width, screen.height) < 900;
+let liteStored = null; try { liteStored = localStorage.getItem('plotopia.lite'); } catch {}
+const LITE = liteStored === null ? PHONE : liteStored === '1';   // phones start in lite mode unless the user chose otherwise
+const renderer = new THREE.WebGLRenderer({ antialias: !LITE, powerPreference: 'high-performance', failIfMajorPerformanceCaveat: false });
+renderer.setPixelRatio(LITE ? 1 : Math.min(devicePixelRatio, 1.5));
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.0;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = !LITE; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 stage.prepend(renderer.domElement);
+renderer.domElement.addEventListener('webglcontextlost', e => {
+  e.preventDefault();
+  const box = $('loading'); box.hidden = false;
+  box.innerHTML = `<div style="max-width:340px;text-align:center;padding:16px"><b style="color:#ffc20e">The 3D view stopped</b><br><br><span style="color:#ccc;font-size:13px">This device's graphics driver gave up. Reloading in a lighter mode usually fixes it.</span><br><br><button id="liteReload" style="border:0;background:#ffc20e;color:#1a1400;border-radius:8px;padding:9px 14px;font-weight:700">Reload in lite mode</button></div>`;
+  $('liteReload').onclick = () => { try { localStorage.setItem('plotopia.lite', '1'); } catch {} location.reload(); };
+});
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
@@ -56,7 +65,7 @@ const ray = new THREE.Raycaster();
 function loadHall(id, { keepUrl = false } = {}) {
   state.view?.dispose(); state.selected = state.pinned = null; state.picking = false; state.scores.clear();
   state.hallId = id;
-  const view = buildHall(HALLS[id], scene); state.view = view;
+  const view = buildHall(HALLS[id], scene, { lite: LITE }); state.view = view;
   view.screenMesh.material.map = media.texture; view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
   controls.target.copy(view.center); camera.position.copy(view.overview);
@@ -252,6 +261,8 @@ Object.values(HALLS).forEach(h => { const o = document.createElement('option'); 
 $('hallSelect').onchange = e => loadHall(e.target.value);
 document.querySelectorAll('.time').forEach(b => b.onclick = () => { document.querySelectorAll('.time').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
 $('helpBtn').onclick = () => { $('coach').hidden = false; };
+$('qualityBtn').textContent = LITE ? 'Switch to full graphics' : 'Switch to lite graphics';
+$('qualityBtn').onclick = () => { try { localStorage.setItem('plotopia.lite', LITE ? '0' : '1'); } catch {} location.reload(); };
 $('coachBtn').onclick = () => { $('coach').hidden = true; try { localStorage.setItem('plotopia.coach', '1'); } catch {} };
 try { if (!localStorage.getItem('plotopia.coach')) $('coach').hidden = false; } catch { $('coach').hidden = false; }
 
@@ -371,7 +382,7 @@ renderer.setAnimationLoop(now => {
       renderer.setViewport(w / 2, 0, w / 2, h); renderer.setScissor(w / 2, 0, w / 2, h); renderer.render(scene, camB);
     }
     renderer.setScissorTest(false);
-  } else { renderer.setViewport(0, 0, w, h); if (quality === 'low') renderer.render(scene, camera); else composer.render(); }
+  } else { renderer.setViewport(0, 0, w, h); if (LITE || quality === 'low') renderer.render(scene, camera); else composer.render(); }
 });
 
 readUrl();
