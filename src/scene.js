@@ -38,6 +38,10 @@ function textCanvas(text, fg, bg, w = 256, h = 96, font = 'bold 60px Helvetica,A
   g.fillStyle = bg; g.fillRect(0, 0, w, h); g.fillStyle = fg; g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, w / 2, h / 2 + 2); return c;
 }
 const exitTex = new THREE.CanvasTexture(textCanvas('EXIT', '#8dffb0', '#0a3a1a')); exitTex.colorSpace = THREE.SRGBColorSpace;
+/* one atlas with A–Z so every lit row letter on the steps merges into a single mesh */
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const letterTex = (() => { const c = document.createElement('canvas'); c.width = 26 * 64; c.height = 64; const g = c.getContext('2d'); g.fillStyle = '#2a1d10'; g.fillRect(0, 0, c.width, 64); g.fillStyle = '#ffd9a0'; g.font = 'bold 48px Helvetica,Arial'; g.textAlign = 'center'; g.textBaseline = 'middle'; [...LETTERS].forEach((ch, i) => g.fillText(ch, i * 64 + 32, 34)); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; })();
+function letterPlane(ch, w, h) { const i = LETTERS.indexOf(ch); const g = new THREE.PlaneGeometry(w, h); const uv = g.attributes.uv; for (let k = 0; k < uv.count; k++) uv.setX(k, (i + uv.getX(k)) / 26); return g; }
 
 /* ---------- materials ---------- */
 const M = {
@@ -59,6 +63,7 @@ const M = {
   sconce: new THREE.MeshBasicMaterial({ color: 0xffc88a }),
   downlight: new THREE.MeshBasicMaterial({ color: 0x3a2a1c }),
   exit: new THREE.MeshBasicMaterial({ map: exitTex }),
+  rowLabel: new THREE.MeshBasicMaterial({ map: letterTex }),
   person: new THREE.MeshStandardMaterial({ color: 0x141418, roughness: 0.95 }),
   hair: new THREE.MeshStandardMaterial({ color: 0x0c0a0a, roughness: 1 }),
   skin: new THREE.MeshStandardMaterial({ color: 0x3a2a24, roughness: 0.9 }),
@@ -113,6 +118,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     put('floor', BOX(hall.hallW - 0.3, 0.015, hall.rowPitch), 0, h + 0.008, s.z);
     put('stepNose', BOX(hall.hallW - 0.3, 0.03, 0.06), 0, h, s.z - hall.rowPitch / 2 + 0.03);
     put('led', BOX(hall.aisle - 0.2, 0.012, 0.025), 0, h + 0.02, s.z - hall.rowPitch / 2 + 0.06);
+    for (const sx of [-1, 1]) put('rowLabel', letterPlane(s.row, 0.16, 0.16), sx * (hall.aisle / 2 + 0.12), h + 0.012, s.z + hall.rowPitch * 0.1, -Math.PI / 2);
   });
   put('floor', BOX(hall.hallW - 0.3, 0.02, hall.firstRowZ - 1), 0, 0.01, (hall.firstRowZ - 1) / 2 + 0.5);
   for (let z = 3; z < backZ; z += 3) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) put('downlight', new THREE.CircleGeometry(0.12, 12), x, hall.hallH - 0.01, z, Math.PI / 2);

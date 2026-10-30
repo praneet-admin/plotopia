@@ -16,6 +16,16 @@ export class ScreenMedia {
     img.onload = () => { this.poster = img; };
     img.src = url;
   }
+  /** Average colour of what is on screen, for lighting the room like the film does. */
+  averageColor() {
+    try {
+      this.avg ??= document.createElement('canvas'); this.avg.width = this.avg.height = 1; const g = this.avg.getContext('2d', { willReadFrequently: true });
+      g.drawImage(this.video || this.canvas, 0, 0, 1, 1); const d = g.getImageData(0, 0, 1, 1).data;
+      const c = new THREE.Color(d[0] / 255, d[1] / 255, d[2] / 255).convertSRGBToLinear();
+      const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; if (l > 0) c.multiplyScalar(0.55 / Math.max(l, 0.2));   // keep brightness steady, take only the hue
+      return c.lerp(new THREE.Color(0xc8dcff), 0.35);
+    } catch { return null; }
+  }
   tick(now) {
     if (this.video) return;                       // VideoTexture updates itself
     if (now - this.last < (this.poster ? 250 : 80)) return; this.last = now;

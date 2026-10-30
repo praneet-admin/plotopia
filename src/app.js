@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { HALLS, CATEGORIES } from './halls.js';
 import { buildHall } from './scene.js';
 import { geometry, visibility, score, verdict, scoreColor, eyeOf } from './metrics.js';
@@ -33,6 +34,8 @@ renderer.domElement.addEventListener('webglcontextlost', e => {
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
+/* a dim indoor environment map gives leather, steel and the screen frame believable reflections */
+{ const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.35; }
 const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.5), ambient = new THREE.AmbientLight(0x3a3238, 0.45);
 scene.add(hemi, ambient);
 let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
@@ -41,6 +44,8 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 160);
 const camB = new THREE.PerspectiveCamera(62, 1, 0.05, 160);   // second viewport in compare mode
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true; controls.maxPolarAngle = Math.PI * 0.49; controls.minDistance = 3; controls.maxDistance = 70;
+controls.autoRotate = true; controls.autoRotateSpeed = 0.25;   // slow cinematic drift until the user touches the hall
+let lastInteraction = 0; controls.addEventListener('start', () => { controls.autoRotate = false; lastInteraction = performance.now(); });
 
 /* a gentle bloom so the screen and LEDs glow a little, as they do in a dark hall */
 const composer = new EffectComposer(renderer);
@@ -77,7 +82,7 @@ function loadHall(id, { keepUrl = false } = {}) {
   renderer.compile(scene, camera);   // build every shader now, not on the first frame it is needed
   scoreAllSeats(view).then(() => { if (state.heat) paintHeat(); });
   if (!keepUrl) writeUrl();
-  $('loading').hidden = true;
+  $('loading').classList.add('fade'); setTimeout(() => { $('loading').hidden = true; $('loading').classList.remove('fade'); }, 700);
   fpsWindowStart = 0; frameCount = 0; slowWindows = 0; warmUntil = performance.now() + 5000;
 }
 
@@ -343,7 +348,7 @@ let lastAspectMode = null;
 function resizeIfNeeded() { if (lastAspectMode !== state.mode) { lastAspectMode = state.mode; resize(); } }
 
 /* Adaptive quality: if the device cannot hold a smooth frame rate, drop bloom, shadows and resolution. */
-let quality = 'high', frameCount = 0, fpsWindowStart = 0, slowWindows = 0, warmUntil = 0;
+let quality = 'high', frameCount = 0, fpsWindowStart = 0, slowWindows = 0, warmUntil = 0, lastTint = 0;
 function setQuality(q) {
   if (q === quality) return; quality = q;
   const low = q === 'low';
@@ -359,6 +364,7 @@ renderer.setAnimationLoop(now => {
     frameCount = 0; fpsWindowStart = now;
   }
   media.tick(now); state.view?.tick(now / 1000);
+  if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
   hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; renderer.toneMappingExposure = 1 + house * 0.7; state.view?.setHouse(house);
   const f = state.flying;
@@ -366,9 +372,13 @@ renderer.setAnimationLoop(now => {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
     f.cam.position.lerpVectors(f.p0, f.p1, e); f.cam.quaternion.slerpQuaternions(f.q0, f.q1, e);
     if (k >= 1) { state.flying = null; f.after?.(); }
-  } else if (state.mode === 'seat') camera.rotation.set(base.A.x - look.pitch, base.A.y - look.yaw, 0, 'YXZ');
+  } else if (state.mode === 'seat') {
+    const t = now / 1000;   // a seated person is never perfectly still: a few millimetres of sway, a fraction of a degree of drift
+    camera.rotation.set(base.A.x - look.pitch + Math.sin(t * 0.9) * 0.0025, base.A.y - look.yaw + Math.sin(t * 0.6 + 1) * 0.003, Math.sin(t * 0.4) * 0.0015, 'YXZ');
+    const eye = eyeOf(state.selected); camera.position.set(eye.x + Math.sin(t * 0.5) * 0.004, eye.y + Math.sin(t * 1.1) * 0.003, eye.z);
+  }
   else if (state.mode === 'compare') { camera.rotation.set(base.A.x - look.pitch, base.A.y - look.yaw, 0, 'YXZ'); camB.rotation.set(base.B.x - lookB.pitch, base.B.y - lookB.yaw, 0, 'YXZ'); }
-  else controls.update();
+  else { if (!controls.autoRotate && performance.now() - lastInteraction > 6000) controls.autoRotate = true; controls.update(); }
 
   resizeIfNeeded();
   const sz = renderer.getSize(new THREE.Vector2()), w = sz.x, h = sz.y;   // CSS pixels: setViewport applies the pixel ratio itself

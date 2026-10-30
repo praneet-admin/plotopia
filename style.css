@@ -47,9 +47,10 @@ header{grid-column:1/3;display:flex;align-items:center;gap:22px;padding:0 20px;b
 #splitLabels span{background:rgba(28,28,32,.92);border:1px solid var(--line);border-radius:10px;padding:6px 12px;font-size:13px;font-weight:600;color:#eee}
 #splitLabels.stack{flex-direction:column;justify-content:space-between;inset:60px 14px 14px 14px;align-items:flex-start}
 #toast{position:absolute;left:50%;top:64px;transform:translateX(-50%);background:var(--accent);color:var(--accent-ink);padding:10px 16px;border-radius:10px;font-weight:600;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
-#loading{position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:12px;color:#9aa;background:#0a0a0c;font-size:13px}
+#loading{transition:opacity .7s ease;position:absolute;inset:0;display:grid;place-items:center;align-content:center;gap:12px;color:#9aa;background:#0a0a0c;font-size:13px}
 .spin{width:28px;height:28px;border-radius:50%;border:3px solid #2a2d36;border-top-color:var(--accent);animation:spin .9s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+#loading.fade{opacity:0;pointer-events:none}
 
 /* ---------- seat map ---------- */
 aside{background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0}
