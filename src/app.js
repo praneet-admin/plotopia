@@ -155,11 +155,11 @@ function sitIn(seats) { state.view.seats.forEach(s => s.mesh.traverse(o => { if 
 
 function setMode(m) {
   state.mode = m;
-  $('backBtn').hidden = m === 'hall'; $('nav').hidden = m === 'hall'; $('hint').hidden = m === 'hall';
+  $('backBtn').hidden = m === 'hall'; $('hint').hidden = m === 'hall';
   $('splitLabels').hidden = m !== 'compare'; $('topLeft').style.visibility = m === 'compare' && portrait() ? 'hidden' : 'visible';
   $('gyroBtn').hidden = !(m !== 'hall' && 'DeviceOrientationEvent' in window && matchMedia('(pointer:coarse)').matches);
   const cb = $('compareBtn'); cb.classList.toggle('on', m === 'compare');
-  cb.innerHTML = m === 'compare' ? 'Done<small>keep this seat</small>' : 'Compare<small>with another seat</small>';
+  cb.textContent = m === 'compare' ? 'Done comparing' : 'Compare'; cb.hidden = m === 'hall';
   controls.enabled = m === 'hall';
   writeUrl();
 }
@@ -216,7 +216,6 @@ function hop(dir) {
   else { let r = sel.r + (dir === 'up' ? 1 : -1); while (!cand && r >= 0 && r < HALLS[state.hallId].rows.length) { cand = nearest(seats.filter(s => s.r === r && !s.sold)); r += dir === 'up' ? 1 : -1; } }
   if (cand) selectSeat(cand); else toast(dir === 'left' || dir === 'right' ? 'No free seat that way in this row' : 'No free seats further that way');
 }
-document.querySelectorAll('#nav [data-hop]').forEach(b => b.onclick = () => hop(b.dataset.hop));
 addEventListener('keydown', e => {
   if (state.mode === 'hall') return;
   const map = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' };
