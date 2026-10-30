@@ -7,32 +7,16 @@
 <title>Plotopia · Meiyazhagan · Pick your seat</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@600;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<meta name="theme-color" content="#121214">
 <link rel="stylesheet" href="style.css">
-<script type="importmap">
-{ "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-} }
-</script>
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/RenderPass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/OutputPass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/Pass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/ShaderPass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/postprocessing/MaskPass.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/shaders/CopyShader.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/shaders/LuminosityHighPassShader.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/shaders/OutputShader.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/geometries/RoundedBoxGeometry.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/BufferGeometryUtils.js">
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="brand">Plotopia</div>
+    <a class="brand" href="./" aria-label="Plotopia"><img class="mark" src="assets/mark.png" alt=""><img class="word" src="assets/wordmark-white.png" alt="Plotopia"></a>
     <div class="movie">
       <div class="poster" aria-hidden="true"><span lang="ta">மெய்யழகன்</span><img id="posterImg" alt=""></div>
       <div>
@@ -152,11 +136,10 @@
     function fail(msg) { if (!box || box.hidden) return; box.innerHTML = '<div style="max-width:340px;text-align:center;padding:16px"><b style="color:#ffc20e">Plotopia could not start</b><br><br><span style="color:#ccc;font-size:13px">' + msg + '</span><br><br><button onclick="location.reload()" style="border:0;background:#ffc20e;color:#1a1400;border-radius:8px;padding:9px 14px;font-weight:700">Try again</button></div>'; }
     window.addEventListener('error', function (e) { fail((e.message || 'Script error') + (e.filename ? '<br><small>' + e.filename.split('/').slice(-2).join('/') + ':' + e.lineno + '</small>' : '')); }, true);
     window.addEventListener('unhandledrejection', function (e) { fail(String(e.reason && e.reason.message || e.reason)); });
-    if (!HTMLScriptElement.supports || !HTMLScriptElement.supports('importmap')) fail('This browser is too old for the 3D viewer. Please update it or use Chrome or Safari.');
     try { var c = document.createElement('canvas'); if (!(c.getContext('webgl2') || c.getContext('webgl'))) fail('3D graphics (WebGL) are turned off in this browser.'); } catch (err) { fail('3D graphics (WebGL) are not available here.'); }
     setTimeout(function () { if (box && !box.hidden && box.textContent.indexOf('Setting up') >= 0) fail('Still loading after 20 seconds. Check the connection: the 3D library loads from cdn.jsdelivr.net.'); }, 20000);
   })();
 </script>
-<script type="module" src="src/app.js"></script>
+<script src="dist/app.js" defer></script>
 </body>
 </html>

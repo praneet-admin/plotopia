@@ -1,5 +1,6 @@
 // Plotopia checkout: a UPI QR with the amount prefilled, Google Pay as the only app option (test mode),
 // then a ticket with its own QR. There is no bank callback here, so "I've paid" is the confirmation.
+import qrcode from 'qrcode-generator';
 const UPI = { pa: 'nightriderpraneet@okaxis', pn: 'Plotopia' };
 const $ = id => document.getElementById(id);
 
@@ -8,16 +9,11 @@ function upiLink(scheme, { amount, note, ref }) {
   return `${scheme}?${q}`;
 }
 async function drawQr(canvas, text, size) {
-  await loadQrLib();
-  const qr = window.qrcode(0, 'H'); qr.addData(text); qr.make();
+  const qr = qrcode(0, 'H'); qr.addData(text); qr.make();
   const n = qr.getModuleCount(), cell = Math.floor(size / (n + 2)), pad = Math.floor((size - cell * n) / 2);
   canvas.width = canvas.height = size; const g = canvas.getContext('2d');
   g.fillStyle = '#fff'; g.fillRect(0, 0, size, size); g.fillStyle = '#111';
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) g.fillRect(pad + c * cell, pad + r * cell, cell, cell);
-}
-let qrLib;
-function loadQrLib() {
-  return (qrLib ??= new Promise((res, rej) => { if (window.qrcode) return res(); const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }));
 }
 const isPhone = () => matchMedia('(pointer:coarse)').matches && /Android|iPhone|iPad/i.test(navigator.userAgent);
 const newRef = () => 'PLT-' + Date.now().toString(36).toUpperCase().slice(-4) + Math.random().toString(36).slice(2, 4).toUpperCase();
