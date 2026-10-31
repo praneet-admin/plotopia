@@ -75,6 +75,9 @@ const M = {
   hair0: new THREE.MeshStandardMaterial({ color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
   hair1: new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
   hair2: new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
+  pants0: new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 1, envMapIntensity: 0.04 }),
+  pants1: new THREE.MeshStandardMaterial({ color: 0x2a2520, roughness: 1, envMapIntensity: 0.04 }),
+  pants2: new THREE.MeshStandardMaterial({ color: 0x1e2433, roughness: 1, envMapIntensity: 0.04 }),
   paper: new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.9, envMapIntensity: 0.05 }),
   phone: new THREE.MeshBasicMaterial({ color: 0x9fc6ff }),
   speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6, envMapIntensity: 0.05 }),
@@ -85,9 +88,9 @@ const M = {
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'pants0', 'pants1', 'pants2', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
-export function buildHall(hall, scene, { lite = false } = {}) {
+export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
   const world = new THREE.Group(); scene.add(world);
   const scr = screenOf(hall);
@@ -101,6 +104,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     tmpM.compose(tmpP.set(x, y, z), tmpQ.setFromEuler(tmpE.set(rx, ry, rz)), tmpS);
     const g = geo.clone().applyMatrix4(tmpM); g.deleteAttribute('uv2'); (bins[key] ??= []).push(g);
   };
+  const putM = (key, geo, m) => { const g = geo.clone().applyMatrix4(m); g.deleteAttribute('uv2'); (bins[key] ??= []).push(g); };
   const BOX = (w, h, d) => new THREE.BoxGeometry(w, h, d);
   const mesh = (geo, m, x, y, z, { cast = false, receive = false, rx = 0, ry = 0 } = {}) => {
     const o = new THREE.Mesh(geo, m); o.position.set(x, y, z); o.rotation.set(rx, ry, 0); o.castShadow = cast; o.receiveShadow = receive; world.add(o); return o;
@@ -216,7 +220,35 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   /* A seated person seen from behind. In a dark hall they are mostly silhouette and screen rim light, so
      proportion and outline matter most: oval head on a visible neck, ears, collar, sloped shoulders, arms on the rests. */
+  const CUSHION_TOP = 0.54;   // seat cushion surface above the row floor
+  function stampReal(s) {
+    const t = template(s.cat);
+    const sex = rnd() < 0.5 ? 'male' : 'female';
+    const bodies = people.bodies.filter(b => b.sex === sex); const body = bodies[Math.floor(rnd() * bodies.length)];
+    const hairOptions = people.hairsFor(body).filter(h => sex === 'female' ? /BuzzedFemale|Long|Buns|SimpleParted/.test(h.hair) : /^.*(Buzzed|SimpleParted|Long)$/.test(h.hair) && !/Female/.test(h.hair));
+    const hair = hairOptions[Math.floor(rnd() * hairOptions.length)];
+    const beard = sex === 'male' && rnd() < 0.3 ? people.hairsFor(body).find(h => h.hair === 'Hair_Beard') : null;
+    const scale = 0.96 + rnd() * 0.08, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
+    const cloth = 'cloth' + Math.floor(rnd() * 5), pants = 'pants' + Math.floor(rnd() * 3), skin = 'skin' + Math.floor(rnd() * 3), hairMat = 'hair' + Math.floor(rnd() * 3);
+    const [px, , pz] = body.pelvis;
+    // character space → seat: pelvis over the cushion centre, bottom on the cushion, facing the screen (-z), slight turn/lean
+    const m = new THREE.Matrix4().makeTranslation(s.x, s.y, s.z + 0.02)
+      .multiply(new THREE.Matrix4().makeRotationY(Math.PI + turn + body.yaw))
+      .multiply(new THREE.Matrix4().makeRotationZ(lean))
+      .multiply(new THREE.Matrix4().makeScale(scale, scale, scale))
+      .multiply(new THREE.Matrix4().makeTranslation(-px, CUSHION_TOP - body.seatY, -pz));
+    const zoneMat = [cloth, skin, pants, hairMat];
+    for (let z = 0; z < 3; z++) { const g = people.geometryFor(body, z); if (g) putM(zoneMat[z], g, m); }
+    for (const h of [hair, beard]) if (h) { const g = people.geometryFor(h, 3); if (g) putM(hairMat, g, m); }
+    if (rnd() < 0.45) put('paper', cupGeo, s.x + (rnd() < 0.5 ? -1 : 1) * (t.w / 2 - 0.03), s.y + 0.78, s.z - t.d * 0.3);
+    if (rnd() < 0.06) put('phone', phoneGeo, s.x + 0.05, s.y + 0.62, s.z - 0.12, -1.1, 0, 0);
+    const headY = s.y + CUSHION_TOP + (body.headY - body.seatY) * scale;
+    const bodyBox = new THREE.Mesh(BOX(0.46, 0.62, 0.3), M.proxy); bodyBox.position.set(s.x, s.y + 0.78, s.z + 0.02); bodyBox.userData.worldZ = s.z; bodyBox.userData.worldX = s.x; world.add(bodyBox); occluders.push(bodyBox);
+    // Head bone sits at the base of the skull; the proxy is centred on the real head and slightly generous for hair
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), M.proxy); head.position.set(s.x + Math.sin(lean) * 0.4, headY + 0.07 * scale, s.z + 0.02); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
+  }
   function stampPerson(s) {
+    if (people) return stampReal(s);
     const tall = (rnd() - 0.5) * 0.1, lean = rnd() < 0.25 ? (rnd() - 0.5) * 0.18 : 0, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.9 : (rnd() - 0.5) * 0.2;
     const y = s.y + tall, z = s.z + 0.02;
     const cloth = 'cloth' + Math.floor(rnd() * 5), skin = 'skin' + Math.floor(rnd() * 3), hair = 'hair' + Math.floor(rnd() * 3), style = rnd();

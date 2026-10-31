@@ -10,6 +10,7 @@ import { HALLS, CATEGORIES } from './halls.js';
 import { buildHall } from './scene.js';
 import { geometry, visibility, score, verdict, scoreColor, eyeOf } from './metrics.js';
 import { ScreenMedia } from './media.js';
+import { loadPeople } from './people.js';
 import { openCheckout } from './payment.js';
 
 const $ = id => document.getElementById(id);
@@ -36,7 +37,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
 /* a dim indoor environment map gives leather, steel and the screen frame believable reflections */
 { const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.12; }
-const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.22), ambient = new THREE.AmbientLight(0x3a3238, 0.08);
+const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.3), ambient = new THREE.AmbientLight(0x3a3238, 0.1);
 scene.add(hemi, ambient);
 let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
 
@@ -71,7 +72,7 @@ const ray = new THREE.Raycaster();
 function loadHall(id, { keepUrl = false } = {}) {
   state.view?.dispose(); state.selected = state.pinned = null; state.picking = false; state.scores.clear();
   state.hallId = id; $('hallSelect').value = id;
-  const view = buildHall(HALLS[id], scene, { lite: LITE }); state.view = view;
+  const view = buildHall(HALLS[id], scene, { lite: LITE, people: peopleData }); state.view = view;
   view.screenMesh.material.map = crisp(media.texture); view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
   controls.target.copy(view.center); camera.position.copy(view.overview);
@@ -387,7 +388,7 @@ renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
   if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.22 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.08 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
+  hemi.intensity = 0.3 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.1 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
@@ -416,5 +417,6 @@ renderer.setAnimationLoop(now => {
   } else { renderer.setViewport(0, 0, w, h); if (LITE || quality === 'low') renderer.render(scene, camera); else composer.render(); }
 });
 
-readUrl();
+let peopleData = null;
+loadPeople(LITE ? 'lo' : 'hi').then(p => { peopleData = p; }).catch(e => console.warn('audience models unavailable, using procedural people', e)).finally(readUrl);
 window.__show = { camera, camB, controls, state, scene, THREE, renderer, resize };

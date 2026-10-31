@@ -19,4 +19,7 @@ Edit files under `src/`, run `npm run build`, commit `dist/app.js` with the chan
 - `src/payment.js` UPI QR checkout and ticket
 - `src/app.js` controller, modes, seat map, share links, lite mode
 
+## Audience models
+The seated audience is baked from Quaternius's CC0 **Universal Base Characters** and **Universal Animation Library** (`Sitting_Idle_Loop`, `Sitting_Talking_Loop`). See `assets/people/CREDITS.md`. To rebake: `cd tools && npm install && RATIO=1 node bake.mjs <UniversalBaseCharacters dir> <UAL1_Standard.glb> out-hi` (and `RATIO=0.22 … out-lo`), then copy `out-*/people.*` to `assets/people/people-hi.*` / `people-lo.*`.
+
 Phones start in lite graphics (no shadows or bloom); toggle under the ⋯ menu. The URL hash carries hall, seat and mode, e.g. `#hall=imax&seat=L5&view=seat`.
