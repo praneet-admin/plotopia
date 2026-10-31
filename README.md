@@ -19,6 +19,16 @@ Edit files under `src/`, run `npm run build`, commit `dist/app.js` with the chan
 - `src/payment.js` UPI QR checkout and ticket
 - `src/app.js` controller, modes, seat map, share links, lite mode
 
+## Embedding from a booking site
+Open the simulator with hash parameters; everything is optional and the demo film is the fallback:
+
+```
+https://praneet-admin.github.io/plotopia/#hall=audi3&view=overview&show=<id>
+  &title=Meiyazhagan&lang=Tamil&cert=U&runtime=2h%2058m&genre=Drama&cast=Karthi,%20Arvind%20Swamy
+  &time=21:00&date=2026-10-31&poster=https://.../poster.jpg&return=https://yoursite/checkout
+```
+`hall` is `audi3`, `audi1` or `imax`; `view` is `overview` (hall) or `seat` with `seat=G7`. With `return` set, the Proceed button becomes "Book <seat>" and sends the browser to `return?seat=G7&hall=audi3&show=<id>` instead of running the built-in UPI checkout.
+
 ## Audience models
 The seated audience is baked from Quaternius's CC0 **Universal Base Characters** and **Universal Animation Library** (`Sitting_Idle_Loop`, `Sitting_Talking_Loop`). See `assets/people/CREDITS.md`. To rebake: `cd tools && npm install && RATIO=1 node bake.mjs <UniversalBaseCharacters dir> <UAL1_Standard.glb> out-hi` (and `RATIO=0.22 … out-lo`), then copy `out-*/people.*` to `assets/people/people-hi.*` / `people-lo.*`.
 

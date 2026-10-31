@@ -182,7 +182,7 @@ function selectSeat(s) {
   $('mVis').innerHTML = `${Math.round(vis * 100)}%<small>${vis >= 0.97 ? 'clear' : vis >= 0.9 ? 'a head' : 'blocked'}</small>`;
   const nb = view.seats.filter(o => o.r === s.r && o !== s && Math.abs(o.x - s.x) < CATEGORIES[s.cat].pitch * 1.1);
   $('mNb').innerHTML = `${nb.filter(o => o.sold).length}/${nb.length}<small>taken</small>`;
-  $('payBtn').disabled = false; $('payBtn').textContent = `Proceed · ₹${c.price}`;
+  $('payBtn').disabled = false; $('payBtn').textContent = $('payBtn').dataset.handoff ? `Book ${s.id} · ₹${c.price}` : `Proceed · ₹${c.price}`;
   $('sumSeat').textContent = `${s.id} · ${c.name}`; $('sumPrice').textContent = `1 seat · ₹${c.price} · ${r.verdict.label} view`;
   $('hudSeat').innerHTML = `Row <b>${s.row}</b> · Seat <b>${s.num}</b> · ${c.name} · view score <b>${r.score}</b>`;
   if ((state.picking || state.mode === 'compare') && state.pinned && state.pinned !== s) enterCompare(); else enterSeatView();
@@ -291,8 +291,11 @@ $('bestBtn').onclick = () => {
 };
 $('payBtn').onclick = () => {
   const s = state.selected; if (!s) return; const h = HALLS[state.hallId];
+  if ($('payBtn').dataset.handoff) {   // booking platform flow: give the chosen seat back and let it run checkout
+    const u = new URL(SHOW.ret); u.searchParams.set('seat', s.id); u.searchParams.set('hall', h.id); if (SHOW.show) u.searchParams.set('show', SHOW.show); location.href = u.toString(); return;
+  }
   const time = document.querySelector('.time.active')?.textContent ?? '7:30 PM';
-  openCheckout({ movie: 'Meiyazhagan', seat: s.id, cat: CATEGORIES[s.cat].name, hall: `${h.venue} · ${h.name}`, hallId: h.id, time: `Today · ${time}`, amount: CATEGORIES[s.cat].price },
+  openCheckout({ movie: SHOW.title || 'Meiyazhagan', seat: s.id, cat: CATEGORIES[s.cat].name, hall: `${h.venue} · ${h.name}`, hallId: h.id, time: `Today · ${time}`, amount: CATEGORIES[s.cat].price },
     ticket => { s.sold = true; s.btn.classList.remove('sel'); s.btn.classList.add('sold'); s.btn.disabled = true; $('payBtn').disabled = true; $('sumSeat').textContent = `${s.id} booked · ${ticket.ref}`; $('sumPrice').textContent = 'Ticket saved on this device'; });
 };
 $('shareBtn').onclick = async () => { writeUrl(); try { await navigator.clipboard.writeText(location.href); toast('Link copied'); } catch { toast(location.href); } };
@@ -355,9 +358,31 @@ renderer.domElement.addEventListener('pointerup', e => {
   if (hit) { const s = hit.object.userData.seat; s.sold ? toast(`${s.id} is already sold`) : selectSeat(s); }
 });
 
+/* ---------------- show context from the booking platform ----------------
+   #hall=audi3&title=…&lang=…&cert=…&runtime=…&genre=…&cast=…&time=19:30&date=2026-10-31&poster=<url>&return=<url>&show=<id>
+   Anything not given keeps the demo film. `return` turns Proceed into a hand-off back to the platform with &seat=<id>. */
+const SHOW = (() => {
+  const p = new URLSearchParams(location.hash.slice(1)); const g = k => p.get(k) || '';
+  const t = g('time'); let timeLabel = t;
+  if (/^\d{1,2}:\d{2}$/.test(t)) { const [h, m] = t.split(':').map(Number); timeLabel = `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; }
+  const d = g('date'); let dateLabel = 'Today';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) { const dt = new Date(d + 'T00:00:00'); dateLabel = dt.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }); }
+  return { title: g('title'), lang: g('lang'), cert: g('cert'), runtime: g('runtime'), genre: g('genre'), cast: g('cast'), timeLabel, dateLabel, poster: g('poster'), ret: g('return'), show: g('show') };
+})();
+function applyShow() {
+  if (SHOW.title) { $('mvTitle').textContent = SHOW.title; document.title = `Plotopia · ${SHOW.title} · Pick your seat`; }
+  if (SHOW.cert) $('mvCert').textContent = SHOW.cert;
+  if (SHOW.title || SHOW.lang) { const parts = [SHOW.lang, '2D', SHOW.runtime, SHOW.genre, SHOW.cast].filter(Boolean); $('mvMeta').textContent = parts.join(' · ') || SHOW.title; }
+  if (SHOW.timeLabel) { $('t0').hidden = $('t2').hidden = true; $('t1').textContent = `${SHOW.dateLabel} · ${SHOW.timeLabel}`; $('t1').classList.add('active'); }
+  if (SHOW.poster && /^https:\/\//.test(SHOW.poster)) { media.loadPoster(SHOW.poster); posterImg.src = SHOW.poster; }
+  if (SHOW.ret && /^https?:\/\//.test(SHOW.ret)) $('payBtn').dataset.handoff = '1';
+}
+applyShow();
+
 /* ---------------- share links ---------------- */
 function writeUrl() {
-  const p = new URLSearchParams({ hall: state.hallId }); if (state.selected) p.set('seat', state.selected.id); if (state.mode !== 'hall') p.set('view', state.mode);
+  const keep = new URLSearchParams(location.hash.slice(1)); const p = new URLSearchParams({ hall: state.hallId });
+  for (const k of ['title', 'lang', 'cert', 'runtime', 'genre', 'cast', 'time', 'date', 'poster', 'return', 'show']) if (keep.get(k)) p.set(k, keep.get(k)); if (state.selected) p.set('seat', state.selected.id); if (state.mode !== 'hall') p.set('view', state.mode);
   if (state.mode === 'compare' && state.pinned) p.set('pin', state.pinned.id);
   history.replaceState(null, '', '#' + p);
 }
@@ -369,7 +394,7 @@ function readUrl() {
   const seat = find(p.get('seat')), pin = find(p.get('pin'));
   if (pin && seat && pin !== seat) { selectSeat(pin); $('compareBtn').onclick(); selectSeat(seat); }
   else if (seat) selectSeat(seat);
-  if (p.get('view') === 'hall' || !seat) enterHallView(true);
+  if (p.get('view') === 'hall' || p.get('view') === 'overview' || !seat) enterHallView(true);
 }
 
 /* ---------------- resize & loop ---------------- */

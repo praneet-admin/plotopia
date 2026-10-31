@@ -21,14 +21,14 @@
     <div class="movie">
       <div class="poster" aria-hidden="true"><span lang="ta">மெய்யழகன்</span><img id="posterImg" alt=""></div>
       <div>
-        <div class="mtitle">Meiyazhagan <span class="cert">U</span></div>
-        <div class="mmeta">Tamil · 2D · 2h 58m · Drama · Karthi, Arvind Swamy</div>
+        <div class="mtitle"><span id="mvTitle">Meiyazhagan</span> <span class="cert" id="mvCert">U</span></div>
+        <div class="mmeta" id="mvMeta">Tamil · 2D · 2h 58m · Drama · Karthi, Arvind Swamy</div>
       </div>
     </div>
     <div class="venue">
       <select id="hallSelect" aria-label="Choose hall"></select>
       <div class="times" role="group" aria-label="Showtime">
-        <button class="time">4:15 PM</button><button class="time active">7:30 PM</button><button class="time">10:45 PM</button>
+        <button class="time" id="t0">4:15 PM</button><button class="time active" id="t1">7:30 PM</button><button class="time" id="t2">10:45 PM</button>
       </div>
     </div>
   </header>
@@ -144,6 +144,6 @@
     setTimeout(function () { if (box && !box.hidden && box.textContent.indexOf('Setting up') >= 0) fail('Still loading after 20 seconds. Check the connection: the 3D library loads from cdn.jsdelivr.net.'); }, 20000);
   })();
 </script>
-<script src="dist/app.js?v=51553972" defer></script>
+<script src="dist/app.js?v=c0a095dc" defer></script>
 </body>
 </html>
