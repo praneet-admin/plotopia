@@ -37,7 +37,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
 /* a dim indoor environment map gives leather, steel and the screen frame believable reflections */
 { const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.12; }
-const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.3), ambient = new THREE.AmbientLight(0x3a3238, 0.1);
+const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.18), ambient = new THREE.AmbientLight(0x3a3238, 0.06);
 scene.add(hemi, ambient);
 let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
 
@@ -388,7 +388,7 @@ renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
   if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.3 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.1 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
+  hemi.intensity = 0.18 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.06 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);

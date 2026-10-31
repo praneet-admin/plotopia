@@ -17,7 +17,10 @@ export async function loadPeople(set = 'hi') {
   function geometryFor(v, zoneId) {
     const key = v.name + ':' + zoneId; if (cache.has(key)) return cache.get(key);
     const { pos, zone, idx } = raw(v);
-    const tris = []; for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; const n = (zone[a] === zoneId) + (zone[b] === zoneId) + (zone[c] === zoneId); if (n >= 2) tris.push(a, b, c); }
+    // clothing zones take only triangles fully inside them (no shirt triangles reaching up a neck vertex);
+    // skin takes any triangle touching skin so the border is covered from underneath; hair by majority
+    const need = zoneId === 1 ? 1 : zoneId === 3 ? 2 : 3;
+    const tris = []; for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; const n = (zone[a] === zoneId) + (zone[b] === zoneId) + (zone[c] === zoneId); if (n >= need) tris.push(a, b, c); }
     if (!tris.length) { cache.set(key, null); return null; }
     const remap = new Map(), positions = []; const index = new Uint32Array(tris.length);
     for (let i = 0; i < tris.length; i++) { const o = tris[i]; let r = remap.get(o); if (r === undefined) { r = remap.size; remap.set(o, r); positions.push(pos[o * 3] / 1000, pos[o * 3 + 1] / 1000, pos[o * 3 + 2] / 1000); } index[i] = r; }

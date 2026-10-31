@@ -69,9 +69,9 @@ const M = {
   cloth2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x1f2a25, roughness: 1, envMapIntensity: 0.04 }),
   cloth3: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x3d342c, roughness: 1, envMapIntensity: 0.04 }),
   cloth4: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x232c44, roughness: 1, envMapIntensity: 0.04 }),
-  skin0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x7a4e34, roughness: 0.85, envMapIntensity: 0.05 }),
-  skin1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x4f3222, roughness: 0.85, envMapIntensity: 0.05 }),
-  skin2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0xa47453, roughness: 0.85, envMapIntensity: 0.05 }),
+  skin0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x7a4e34, roughness: 1, envMapIntensity: 0.05 }),
+  skin1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x4f3222, roughness: 1, envMapIntensity: 0.05 }),
+  skin2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0xa47453, roughness: 1, envMapIntensity: 0.05 }),
   hair0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
   hair1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
   hair2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
@@ -156,10 +156,10 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   glow.position.set(0, scr.cy, 0.3); glow.target.position.set(0, 2, backZ * 0.7);
   glow.castShadow = !lite; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2; glow.shadow.radius = 6;
   world.add(glow, glow.target);
-  const fill = new THREE.SpotLight(0xc8dcff, 55, backZ * 3, Math.PI / 2.1, 1, 1.0);
+  const fill = new THREE.SpotLight(0xc8dcff, 30, backZ * 3, Math.PI / 2.1, 1, 1.0);
   fill.position.set(0, scr.cy, 0.3); fill.target.position.set(0, 1.5, backZ); world.add(fill, fill.target);
   /* the booth window and rear wall lights put a little light on the backs of heads, so people have shape, not just outline */
-  const booth = new THREE.SpotLight(0xfff0dc, 26, backZ * 2, 0.75, 1, 1.2); booth.position.set(0, hall.hallH - 0.8, backZ + 0.6); booth.target.position.set(0, 1.5, backZ * 0.3); world.add(booth, booth.target);
+  const booth = new THREE.SpotLight(0xfff0dc, 12, backZ * 2, 0.75, 1, 1.2); booth.position.set(0, hall.hallH - 0.8, backZ + 0.6); booth.target.position.set(0, 1.5, backZ * 0.3); world.add(booth, booth.target);
   /* house lights: warm pools from the ceiling downlights while people browse the hall (full mode only) */
   const pools = [];
   if (!lite) for (let z = 3; z < backZ; z += 4.5) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) {
@@ -230,7 +230,7 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     // Long and Buns in the pack are alpha-card strips (spiky without their texture), so only solid meshes are used
     const hairOptions = people.hairsFor(body).filter(h => sex === 'female' ? /BuzzedFemale|SimpleParted/.test(h.hair) : /Hair_Buzzed$|SimpleParted/.test(h.hair));
     const parted = hairOptions.find(h => /SimpleParted/.test(h.hair));
-    const longHair = sex === 'female' ? rnd() < 0.45 : rnd() < 0.08, bun = sex === 'female' && !longHair && rnd() < 0.3;
+    const longHair = false, bun = false;   // the pack's long/bun styles are alpha cards; the solid styles read better than add-ons
     const hair = rnd() < 0.75 && parted ? parted : hairOptions[Math.floor(rnd() * hairOptions.length)];   // mostly full hair, some buzzed
     const beard = sex === 'male' && rnd() < 0.3 ? people.hairsFor(body).find(h => h.hair === 'Hair_Beard') : null;
     const scale = 0.88 + rnd() * 0.07, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;

@@ -23,7 +23,7 @@ export class ScreenMedia {
       g.drawImage(this.video || this.canvas, 0, 0, 1, 1); const d = g.getImageData(0, 0, 1, 1).data;
       const c = new THREE.Color(d[0] / 255, d[1] / 255, d[2] / 255).convertSRGBToLinear();
       const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b; if (l > 0) c.multiplyScalar(0.55 / Math.max(l, 0.2));   // keep brightness steady, take only the hue
-      return c.lerp(new THREE.Color(0xc8dcff), 0.35);
+      return c.lerp(new THREE.Color(0xc8dcff), 0.6);   // mostly neutral screen-white, with a hint of the film's hue
     } catch { return null; }
   }
   tick(now) {
