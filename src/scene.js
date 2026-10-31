@@ -75,6 +75,8 @@ const M = {
   hair0: new THREE.MeshStandardMaterial({ color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
   hair1: new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
   hair2: new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
+  paper: new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.9, envMapIntensity: 0.05 }),
+  phone: new THREE.MeshBasicMaterial({ color: 0x9fc6ff }),
   speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6, envMapIntensity: 0.05 }),
   beam: new THREE.MeshBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: 0.018, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
   dust: new THREE.PointsMaterial({ color: 0xdde8ff, size: 0.01, transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending }),
@@ -83,7 +85,7 @@ const M = {
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
 export function buildHall(hall, scene, { lite = false } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
@@ -207,6 +209,9 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   const hoodCap = new THREE.SphereGeometry(0.108, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.8).scale(0.92, 1.02, 0.98);
   const hairLong = new THREE.CylinderGeometry(0.09, 0.085, 0.26, 12, 1, false, Math.PI * 0.5, Math.PI).scale(0.95, 1, 0.8);
   const bunGeo = new THREE.SphereGeometry(0.045, 10, 8);
+  const brimGeo = new THREE.CylinderGeometry(0.11, 0.11, 0.012, 16, 1, false, Math.PI * 0.55, Math.PI * 0.9);   // cap peak, in front of the head
+  const cupGeo = new THREE.CylinderGeometry(0.038, 0.03, 0.14, 12);
+  const phoneGeo = new THREE.PlaneGeometry(0.07, 0.14);
   let seed = 7;
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
   /* A seated person seen from behind. In a dark hall they are mostly silhouette and screen rim light, so
@@ -216,15 +221,19 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     const y = s.y + tall, z = s.z + 0.02;
     const cloth = 'cloth' + Math.floor(rnd() * 5), skin = 'skin' + Math.floor(rnd() * 3), hair = 'hair' + Math.floor(rnd() * 3), style = rnd();
     const hx = s.x + Math.sin(lean) * 0.35, hy = y + EYE_HEIGHT - 0.02;   // head centre, shifted by the lean
+    const t = template(s.cat);
     put(cloth, torsoProfile, s.x, y, z, 0, turn * 0.3, lean);
     put(cloth, collarGeo, s.x + Math.sin(lean) * 0.2, y + 0.985, z, 0, 0, lean);
     put(skin, neckGeo, hx - Math.sin(lean) * 0.05, hy - 0.12, z, 0, 0, lean);
-    put(skin, headGeo, hx, hy, z, 0, turn, lean);
+    put(skin, headGeo, hx, hy, z, 0, turn, lean);   // size variety comes from `tall` and the lean; heads stay human-sized
     for (const sx of [-1, 1]) put(skin, earGeo, hx + sx * (0.083 * Math.cos(turn)), hy - 0.005, z + sx * 0.083 * Math.sin(turn), 0, turn, lean);
     if (style < 0.5) put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean);
     else if (style < 0.72) { put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean); put(hair, hairLong, hx, hy - 0.1, z + 0.045, 0, turn, lean); }
     else if (style < 0.86) { put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean); put(hair, bunGeo, hx, hy + 0.065, z + 0.075, 0, 0, lean); }
     else put(cloth, hoodCap, hx, hy + 0.01, z + 0.01, 0, turn, lean);   // hood up
+    if (style < 0.5 && rnd() < 0.3) put(cloth, brimGeo, hx, hy + 0.055, z - 0.02, 0, turn + Math.PI, lean);   // baseball cap
+    if (rnd() < 0.45) put('paper', cupGeo, s.x + (rnd() < 0.5 ? -1 : 1) * (t.w / 2 - 0.03), y + 0.78, z - t.d * 0.3);   // drink in the cup holder
+    if (rnd() < 0.06) put('phone', phoneGeo, s.x + 0.05, y + 0.62, z - 0.12, -1.1, 0, 0);   // someone checking their phone
     for (const sx of [-1, 1]) {
       put(cloth, armGeo, s.x + sx * 0.245, y + 0.78, z - 0.08, 0.5, 0, sx * 0.12);
       put(skin, handGeo, s.x + sx * 0.265, y + 0.66, z - 0.2);
