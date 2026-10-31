@@ -152,7 +152,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   glow.position.set(0, scr.cy, 0.3); glow.target.position.set(0, 2, backZ * 0.7);
   glow.castShadow = !lite; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2; glow.shadow.radius = 6;
   world.add(glow, glow.target);
-  const fill = new THREE.SpotLight(0xc8dcff, 40, backZ * 3, Math.PI / 2.1, 1, 1.0);
+  const fill = new THREE.SpotLight(0xc8dcff, 55, backZ * 3, Math.PI / 2.1, 1, 1.0);
   fill.position.set(0, scr.cy, 0.3); fill.target.position.set(0, 1.5, backZ); world.add(fill, fill.target);
   /* house lights: warm pools from the ceiling downlights while people browse the hall (full mode only) */
   const pools = [];

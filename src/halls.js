@@ -14,7 +14,7 @@ export const HALLS = {
     hallW: 17, hallH: 8.5, aisle: 1.3,
     rows: 'ABCDEFGHIJKLM', perSide: 8,
     bands: [['ABC', 'classic'], ['DEFGHIJ', 'prime'], ['KLM', 'recliner']],
-    occupancy: r => (r < 2 ? 0.08 : r < 7 ? 0.35 : 0.55),
+    occupancy: r => (r < 2 ? 0.2 : r < 7 ? 0.55 : 0.7),
   },
   audi1: {
     id: 'audi1', name: 'Audi 1 · Large', venue: 'PVR Phoenix',
@@ -23,7 +23,7 @@ export const HALLS = {
     hallW: 21, hallH: 9.5, aisle: 1.4,
     rows: 'ABCDEFGHIJKLMNOPQ', perSide: 10,
     bands: [['ABCD', 'classic'], ['EFGHIJKLMN', 'prime'], ['OPQ', 'recliner']],
-    occupancy: r => (r < 3 ? 0.05 : r < 9 ? 0.3 : 0.6),
+    occupancy: r => (r < 3 ? 0.15 : r < 9 ? 0.5 : 0.7),
   },
   imax: {
     id: 'imax', name: 'IMAX · Steep rake', venue: 'PVR Phoenix',
@@ -32,7 +32,7 @@ export const HALLS = {
     hallW: 26, hallH: 16, aisle: 1.6,
     rows: 'ABCDEFGHIJKLMNOP', perSide: 11,
     bands: [['ABC', 'classic'], ['DEFGHIJKLM', 'prime'], ['NOP', 'recliner']],
-    occupancy: r => (r < 3 ? 0.1 : 0.45),
+    occupancy: r => (r < 3 ? 0.2 : 0.6),
   },
 };
 

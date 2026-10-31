@@ -36,7 +36,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
 /* a dim indoor environment map gives leather, steel and the screen frame believable reflections */
 { const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.12; }
-const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.12), ambient = new THREE.AmbientLight(0x3a3238, 0.05);
+const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.22), ambient = new THREE.AmbientLight(0x3a3238, 0.08);
 scene.add(hemi, ambient);
 let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
 
@@ -176,6 +176,15 @@ function seatPose(s) {
   const eye = eyeOf(s); const tmp = new THREE.PerspectiveCamera(); tmp.position.copy(eye); tmp.lookAt(0, state.view.scr.cy, 0);
   return { eye, quat: tmp.quaternion.clone() };
 }
+/* A seat view should feel like sitting there: the picture fills most of the frame, as it fills most of your vision.
+   Fit the lens so the screen spans ~80% of the width (90% on phones), then clamp to sane lens angles. */
+function seatFov(s, aspect) {
+  const hfovScreen = geometry(s, state.view.scr).hfov;
+  const share = aspect < 1 ? 0.92 : 0.8;
+  const hfovCam = THREE.MathUtils.clamp(hfovScreen / share, 30, 95);
+  const v = 2 * Math.atan(Math.tan(THREE.MathUtils.degToRad(hfovCam) / 2) / aspect) * 180 / Math.PI;
+  return THREE.MathUtils.clamp(v, 24, 75);
+}
 /* In a seat you see your own armrests but not the backrest behind your head. */
 function sitIn() {}   // your own backrest sits behind the camera, nothing to hide
 
@@ -198,7 +207,7 @@ function enterSeatView() {
   setMode('seat'); look.yaw = look.pitch = 0;
   sitIn([state.selected]);
   const { eye, quat } = seatPose(state.selected);
-  camera.fov = 62; camera.updateProjectionMatrix();
+  camera.fov = seatFov(state.selected, camera.aspect); camera.updateProjectionMatrix();
   flyTo(camera, eye, quat, fromHall ? 1300 : 700, () => base.A.setFromQuaternion(quat, 'YXZ'));
 }
 function enterHallView(instant = false) {
@@ -216,7 +225,7 @@ function enterCompare() {
   setMode('compare'); look.yaw = look.pitch = lookB.yaw = lookB.pitch = 0;
   sitIn([state.pinned, state.selected]);
   const A = seatPose(state.pinned), B = seatPose(state.selected);
-  camera.fov = 62; camera.updateProjectionMatrix();
+  camera.fov = seatFov(state.pinned, camera.aspect); camera.updateProjectionMatrix(); camB.fov = seatFov(state.selected, camB.aspect); camB.updateProjectionMatrix();
   camera.position.copy(A.eye); camera.quaternion.copy(A.quat); base.A.setFromQuaternion(A.quat, 'YXZ');
   camB.position.copy(B.eye); camB.quaternion.copy(B.quat); base.B.setFromQuaternion(B.quat, 'YXZ');
   const lab = s => { const r = state.scores.get(s.id); return `${s.id} · ${CATEGORIES[s.cat].name} ₹${CATEGORIES[s.cat].price} · score ${r?.score ?? '…'}`; };
@@ -348,8 +357,11 @@ const portrait = () => stage.clientWidth < 640;   // phones: stack compare views
 function resize() {
   const w = stage.clientWidth, h = stage.clientHeight; renderer.setSize(w, h, false); composer.setSize(w, h);
   const half = portrait() ? w / (h / 2) : (w / 2) / h;
-  camera.aspect = state.mode === 'compare' ? half : w / h; camera.updateProjectionMatrix();
-  camB.aspect = half; camB.updateProjectionMatrix();
+  camera.aspect = state.mode === 'compare' ? half : w / h;
+  if (state.mode === 'seat' && state.selected) camera.fov = seatFov(state.selected, camera.aspect);
+  if (state.mode === 'compare' && state.pinned) camera.fov = seatFov(state.pinned, camera.aspect);
+  camera.updateProjectionMatrix();
+  camB.aspect = half; if (state.mode === 'compare' && state.selected) camB.fov = seatFov(state.selected, half); camB.updateProjectionMatrix();
   $('splitLabels').classList.toggle('stack', portrait());
 }
 new ResizeObserver(resize).observe(stage);
@@ -375,7 +387,7 @@ renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
   if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.12 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.05 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
+  hemi.intensity = 0.22 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.08 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
