@@ -225,14 +225,15 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   const CUSHION_TOP = 0.54;   // seat cushion surface above the row floor
   function stampReal(s) {
     const t = template(s.cat);
-    const sex = rnd() < 0.5 ? 'male' : 'female';
+    const sex = rnd() < 0.6 ? 'male' : 'female';
     const bodies = people.bodies.filter(b => b.sex === sex); const body = bodies[Math.floor(rnd() * bodies.length)];
     // Long and Buns in the pack are alpha-card strips (spiky without their texture), so only solid meshes are used
     const hairOptions = people.hairsFor(body).filter(h => sex === 'female' ? /BuzzedFemale|SimpleParted/.test(h.hair) : /Hair_Buzzed$|SimpleParted/.test(h.hair));
+    const parted = hairOptions.find(h => /SimpleParted/.test(h.hair));
     const longHair = sex === 'female' ? rnd() < 0.45 : rnd() < 0.08, bun = sex === 'female' && !longHair && rnd() < 0.3;
-    const hair = hairOptions[Math.floor(rnd() * hairOptions.length)];
+    const hair = rnd() < 0.75 && parted ? parted : hairOptions[Math.floor(rnd() * hairOptions.length)];   // mostly full hair, some buzzed
     const beard = sex === 'male' && rnd() < 0.3 ? people.hairsFor(body).find(h => h.hair === 'Hair_Beard') : null;
-    const scale = 0.96 + rnd() * 0.08, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
+    const scale = 0.88 + rnd() * 0.07, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
     const cloth = 'cloth' + Math.floor(rnd() * 5), pants = 'pants' + Math.floor(rnd() * 3), skin = 'skin' + Math.floor(rnd() * 3), hairMat = 'hair' + Math.floor(rnd() * 3);
     const [px, , pz] = body.pelvis;
     // character space → seat: pelvis over the cushion centre, bottom on the cushion, facing the screen (-z), slight turn/lean

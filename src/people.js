@@ -1,6 +1,7 @@
 // Seated audience meshes baked from Quaternius's CC0 Universal Base Characters + Universal Animation Library
 // (see assets/people/CREDITS.md). Loads one quantised binary and hands out per-zone geometries.
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export async function loadPeople(set = 'hi') {
   const base = `assets/people/people-${set}`;
@@ -20,7 +21,9 @@ export async function loadPeople(set = 'hi') {
     if (!tris.length) { cache.set(key, null); return null; }
     const remap = new Map(), positions = []; const index = new Uint32Array(tris.length);
     for (let i = 0; i < tris.length; i++) { const o = tris[i]; let r = remap.get(o); if (r === undefined) { r = remap.size; remap.set(o, r); positions.push(pos[o * 3] / 1000, pos[o * 3 + 1] / 1000, pos[o * 3 + 2] / 1000); } index[i] = r; }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); g.setIndex(new THREE.BufferAttribute(index, 1)); g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(positions.length / 3 * 2), 2)); g.computeVertexNormals();   // uv so it merges with the other geometry
+    let g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); g.setIndex(new THREE.BufferAttribute(index, 1));
+    g = mergeVertices(g, 1e-4);   // weld seam-split vertices so normals are smooth across the body, not per facet
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2)); g.computeVertexNormals();
     cache.set(key, g); return g;
   }
   return { bodies, hairs, geometryFor, hairsFor: body => hairs.filter(h => h.body === body.name) };

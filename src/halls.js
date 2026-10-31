@@ -10,7 +10,7 @@ export const HALLS = {
   audi3: {
     id: 'audi3', name: 'Audi 3 · Standard', venue: 'PVR Phoenix',
     screenW: 12, screenBottom: 0.35, aspect: 16 / 9,
-    firstRowZ: 6, rowPitch: 1.1, riser: 0.19, flatRows: 2,
+    firstRowZ: 6, rowPitch: 1.1, riser: 0.24, flatRows: 2,
     hallW: 17, hallH: 8.5, aisle: 1.3,
     rows: 'ABCDEFGHIJKLM', perSide: 8,
     bands: [['ABC', 'classic'], ['DEFGHIJ', 'prime'], ['KLM', 'recliner']],
@@ -19,7 +19,7 @@ export const HALLS = {
   audi1: {
     id: 'audi1', name: 'Audi 1 · Large', venue: 'PVR Phoenix',
     screenW: 15, screenBottom: 0.5, aspect: 2.39,
-    firstRowZ: 7, rowPitch: 1.05, riser: 0.2, flatRows: 3,
+    firstRowZ: 7, rowPitch: 1.05, riser: 0.24, flatRows: 3,
     hallW: 21, hallH: 9.5, aisle: 1.4,
     rows: 'ABCDEFGHIJKLMNOPQ', perSide: 10,
     bands: [['ABCD', 'classic'], ['EFGHIJKLMN', 'prime'], ['OPQ', 'recliner']],

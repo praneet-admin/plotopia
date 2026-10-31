@@ -5,6 +5,29 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+
+/* Dress a baked body: weld, then smooth away anatomy under the clothing zones and push them outward so
+   the torso reads as a shirt and the legs as trousers rather than skin painted a colour. */
+function dress(part) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(part.pos, 3)); g.setAttribute('zone', new THREE.BufferAttribute(new Float32Array(part.zone), 1)); g.setIndex(part.idx);
+  const w = mergeVertices(g, 1e-4); const pos = w.attributes.position, zone = w.attributes.zone, idx = w.index.array, n = pos.count;
+  const nb = Array.from({ length: n }, () => new Set());
+  for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
+  const P = pos.array; const Z = zone.array; const soft = i => Z[i] === 0 || Z[i] === 2;
+  for (let it = 0; it < 6; it++) {   // Laplacian smoothing inside cloth/trouser zones only
+    const out = new Float32Array(P);
+    for (let i = 0; i < n; i++) if (soft(i)) { let sx = 0, sy = 0, sz = 0, k = 0; for (const j of nb[i]) if (Z[j] === Z[i]) { sx += P[j * 3]; sy += P[j * 3 + 1]; sz += P[j * 3 + 2]; k++; } if (k > 2) { out[i * 3] = P[i * 3] * 0.4 + (sx / k) * 0.6; out[i * 3 + 1] = P[i * 3 + 1] * 0.4 + (sy / k) * 0.6; out[i * 3 + 2] = P[i * 3 + 2] * 0.4 + (sz / k) * 0.6; } }
+    P.set(out);
+  }
+  w.computeVertexNormals(); const N = w.attributes.normal.array;
+  // feather: no push right at a zone border (collar, cuffs, waist), full push three rings in, so edges stay clean
+  const hop = new Float32Array(n).fill(3);
+  for (let i = 0; i < n; i++) for (const j of nb[i]) if (Z[j] !== Z[i]) { hop[i] = 0; break; }
+  for (let r = 1; r <= 2; r++) for (let i = 0; i < n; i++) if (hop[i] === 3) for (const j of nb[i]) if (hop[j] === r - 1) { hop[i] = r; break; }
+  for (let i = 0; i < n; i++) { const d = (Z[i] === 0 ? 0.022 : Z[i] === 2 ? 0.012 : 0) * (hop[i] / 3); if (d) { P[i * 3] += N[i * 3] * d; P[i * 3 + 1] += N[i * 3 + 1] * d; P[i * 3 + 2] += N[i * 3 + 2] * d; } }
+  return { pos: Float32Array.from(P), zone: Uint8Array.from(Z), idx: Array.from(idx) };
+}
 import fs from 'node:fs'; import path from 'node:path';
 import { simplify, weld } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
@@ -58,7 +81,7 @@ for (const [sex, file] of Object.entries(bodies)) {
     const clip = clips.find(c => c.name === clipName); const mixer = new THREE.AnimationMixer(root); const a = mixer.clipAction(clip); a.play(); mixer.setTime(t); root.updateMatrixWorld(true);
     const skinned = []; root.traverse(o => { if (o.isSkinnedMesh) skinned.push(o); });
     const body = skinned.filter(m => !/Eye|Face\.001|Eyebrow/.test(m.name) || m.geometry.attributes.position.count > 5000);
-    const parts = body.map(m => bakeSkinned(m, null));
+    const parts = body.map(m => dress(bakeSkinned(m, null)));
     // facing: knees (calf joints) relative to pelvis in XZ tell us which way the person faces
     const bone = n => root.getObjectByName(n); const pel = bone('pelvis').getWorldPosition(new THREE.Vector3()), calf = bone('calf_l').getWorldPosition(new THREE.Vector3()).add(bone('calf_r').getWorldPosition(new THREE.Vector3())).multiplyScalar(0.5);
     const fwd = new THREE.Vector2(calf.x - pel.x, calf.z - pel.z).normalize(); const yaw = Math.atan2(fwd.x, fwd.y);   // rotate so forward becomes -z
