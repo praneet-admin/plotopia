@@ -76,7 +76,7 @@ const media = new ScreenMedia();
 // One fixed image on every screen (the platform no longer passes a poster); file lives in assets/.
 const SCREEN_IMAGE = 'assets/screen-matrix.webp';
 media.loadPoster(SCREEN_IMAGE);
-const posterImg = document.getElementById('posterImg'); posterImg.src = SCREEN_IMAGE; posterImg.onerror = () => posterImg.remove();
+document.getElementById('posterImg')?.remove();   // header keeps the film's own tile (drawn Tamil title); the screen image is screen-only
 const crisp = t => { t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.anisotropy = 8; return t; };
 media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = crisp(t); state.view.screenMesh.material.needsUpdate = true; } };
 
