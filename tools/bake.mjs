@@ -15,6 +15,11 @@ function dress(part) {
   const nb = Array.from({ length: n }, () => new Set());
   for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
   const P = pos.array; const Z = zone.array; const soft = i => Z[i] === 0 || Z[i] === 2;
+  for (let it = 0; it < 14; it++) {   // hands: melt the fingers into a soft mitt shape
+    const out = new Float32Array(P);
+    for (let i = 0; i < n; i++) if (Z[i] === 4) { let sx = 0, sy = 0, sz = 0, k = 0; for (const j of nb[i]) { sx += P[j * 3]; sy += P[j * 3 + 1]; sz += P[j * 3 + 2]; k++; } if (k > 2) { out[i * 3] = P[i * 3] * 0.3 + (sx / k) * 0.7; out[i * 3 + 1] = P[i * 3 + 1] * 0.3 + (sy / k) * 0.7; out[i * 3 + 2] = P[i * 3 + 2] * 0.3 + (sz / k) * 0.7; } }
+    P.set(out);
+  }
   // feather: vertices on a zone border (collar, cuffs, waist) are left alone; the effect ramps up over four rings
   const hop = new Float32Array(n).fill(4);
   for (let i = 0; i < n; i++) for (const j of nb[i]) if (Z[j] !== Z[i]) { hop[i] = 0; break; }
@@ -29,6 +34,7 @@ function dress(part) {
   // the pack's heads run large: scale skin above the collar about the head centre
   let hc = [0, 0, 0], hn = 0; for (let i = 0; i < n; i++) if (Z[i] === 1 && P[i * 3 + 1] > HEAD_FLOOR) { hc[0] += P[i * 3]; hc[1] += P[i * 3 + 1]; hc[2] += P[i * 3 + 2]; hn++; }
   if (hn) { hc = hc.map(v => v / hn); for (let i = 0; i < n; i++) if (Z[i] === 1 && P[i * 3 + 1] > HEAD_FLOOR) for (let k = 0; k < 3; k++) P[i * 3 + k] = hc[k] + (P[i * 3 + k] - hc[k]) * 0.9; }
+  for (let i = 0; i < n; i++) if (Z[i] === 4) Z[i] = 1;
   return { pos: Float32Array.from(P), zone: Uint8Array.from(Z), idx: Array.from(idx) };
 }
 let HEAD_FLOOR = 0;
@@ -47,7 +53,7 @@ async function loadThree(file) {   // bundle to a GLB in memory, then parse with
 }
 const bodies = { male: 'Superhero_Male_FullBody_notex.gltf', female: 'Superhero_Female_FullBody_notex.gltf' };
 const hairs = ['Hair_Buzzed', 'Hair_BuzzedFemale', 'Hair_SimpleParted', 'Hair_Long', 'Hair_Buns', 'Hair_Beard'];
-const poses = [['Sitting_Idle_Loop', 0.0], ['Sitting_Idle_Loop', 1.3], ['Sitting_Talking_Loop', 0.6]];
+const poses = [['Sitting_Idle_Loop', 0.0], ['Sitting_Idle_Loop', 0.8], ['Sitting_Idle_Loop', 1.3]];
 const anim = await loadThree(UAL); const clips = anim.animations;
 const zoneOf = n => /Head|neck/.test(n) ? 1 : /hand|index|middle|pinky|ring|thumb/.test(n) ? 1 : /lowerarm/.test(n) ? 1 : /thigh|calf|foot|ball/.test(n) ? 2 : 0;   // 0 cloth, 1 skin, 2 trousers, 3 hair
 const manifest = { zones: ['cloth', 'skin', 'pants', 'hair'], variants: [] }; const chunks = []; let offset = 0;
@@ -61,7 +67,7 @@ function bakeSkinned(mesh, zoneFixed) {
       let best = 0, bw = -1; for (let k = 0; k < 4; k++) { const w = sw.array[i * sw.itemSize + k]; if (w > bw) { bw = w; best = si.array[i * si.itemSize + k]; } }
       const bone = names[best] || '', restY = geo.attributes.position.getY(i), restX = Math.abs(geo.attributes.position.getX(i));
       // head, neck and hands by bone; everything else by height in the rest pose so colour borders are clean lines
-      zone[i] = /Head|neck/.test(bone) || /hand|index|middle|pinky|ring|thumb/.test(bone) ? 1 : restY > 1.5 ? 1 : restY < 0.98 ? 2 : (restX > 0.42 && restY < 1.25 ? 1 : 0);   // forearms below the sleeve line show skin
+      zone[i] = /Head|neck/.test(bone) ? 1 : /hand|index|middle|pinky|ring|thumb/.test(bone) ? 4 : /upperarm|lowerarm|clavicle/.test(bone) ? 0 : restY > 1.5 ? 1 : restY < 0.98 ? 2 : 0;   // long sleeves; 4 = hands (smoothed to soft shapes, then skin)
     }
   }
   const idx = geo.index ? Array.from(geo.index.array) : [...Array(n).keys()];
