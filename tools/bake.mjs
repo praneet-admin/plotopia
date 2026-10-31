@@ -26,8 +26,12 @@ function dress(part) {
   }
   w.computeVertexNormals(); const N = w.attributes.normal.array;
   for (let i = 0; i < n; i++) { const d = (Z[i] === 0 ? 0.022 : Z[i] === 2 ? 0.012 : 0) * (hop[i] / 4); if (d) { P[i * 3] += N[i * 3] * d; P[i * 3 + 1] += N[i * 3 + 1] * d; P[i * 3 + 2] += N[i * 3 + 2] * d; } }
+  // the pack's heads run large: scale skin above the collar about the head centre
+  let hc = [0, 0, 0], hn = 0; for (let i = 0; i < n; i++) if (Z[i] === 1 && P[i * 3 + 1] > HEAD_FLOOR) { hc[0] += P[i * 3]; hc[1] += P[i * 3 + 1]; hc[2] += P[i * 3 + 2]; hn++; }
+  if (hn) { hc = hc.map(v => v / hn); for (let i = 0; i < n; i++) if (Z[i] === 1 && P[i * 3 + 1] > HEAD_FLOOR) for (let k = 0; k < 3; k++) P[i * 3 + k] = hc[k] + (P[i * 3 + k] - hc[k]) * 0.9; }
   return { pos: Float32Array.from(P), zone: Uint8Array.from(Z), idx: Array.from(idx) };
 }
+let HEAD_FLOOR = 0;
 import fs from 'node:fs'; import path from 'node:path';
 import { simplify, weld } from '@gltf-transform/functions';
 import { MeshoptSimplifier } from 'meshoptimizer';
@@ -81,6 +85,7 @@ for (const [sex, file] of Object.entries(bodies)) {
     const clip = clips.find(c => c.name === clipName); const mixer = new THREE.AnimationMixer(root); const a = mixer.clipAction(clip); a.play(); mixer.setTime(t); root.updateMatrixWorld(true);
     const skinned = []; root.traverse(o => { if (o.isSkinnedMesh) skinned.push(o); });
     const body = skinned.filter(m => !/Eye|Face\.001|Eyebrow/.test(m.name) || m.geometry.attributes.position.count > 5000);
+    HEAD_FLOOR = root.getObjectByName('Head').getWorldPosition(new THREE.Vector3()).y - 0.06;
     const parts = body.map(m => dress(bakeSkinned(m, null)));
     // facing: knees (calf joints) relative to pelvis in XZ tell us which way the person faces
     const bone = n => root.getObjectByName(n); const pel = bone('pelvis').getWorldPosition(new THREE.Vector3()), calf = bone('calf_l').getWorldPosition(new THREE.Vector3()).add(bone('calf_r').getWorldPosition(new THREE.Vector3())).multiplyScalar(0.5);
