@@ -5,7 +5,8 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 
 export async function loadPeople(set = 'hi') {
   const base = `assets/people/people-${set}`;
-  const [manifest, bin] = await Promise.all([fetch(`${base}.json`).then(r => r.json()), fetch(`${base}.bin`).then(r => r.arrayBuffer())]);
+  const ver = (document.querySelector('meta[name="plotopia-assets"]')?.content.match(new RegExp(`${set}=([0-9a-f]+)`)) || [])[1] || Date.now();   // content hash so a replaced file is never served stale
+  const [manifest, bin] = await Promise.all([fetch(`${base}.json?v=${ver}`).then(r => r.json()), fetch(`${base}.bin?v=${ver}`).then(r => r.arrayBuffer())]);
   const cache = new Map();
   const bodies = manifest.variants.filter(v => v.kind === 'body');
   const hairs = manifest.variants.filter(v => v.kind === 'hair');

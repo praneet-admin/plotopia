@@ -388,7 +388,7 @@ renderer.setAnimationLoop(now => {
   media.tick(now); state.view?.tick(now / 1000);
   if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.18 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.06 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
+  hemi.intensity = 0.18 + house * (LITE ? 0.6 : 0.22); ambient.intensity = 0.06 + house * (LITE ? 0.25 : 0.08); renderer.toneMappingExposure = 1 + house * 0.12; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);

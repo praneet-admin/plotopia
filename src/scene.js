@@ -233,7 +233,7 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     const longHair = false, bun = false;   // the pack's long/bun styles are alpha cards; the solid styles read better than add-ons
     const hair = rnd() < 0.75 && parted ? parted : hairOptions[Math.floor(rnd() * hairOptions.length)];   // mostly full hair, some buzzed
     const beard = sex === 'male' && rnd() < 0.3 ? people.hairsFor(body).find(h => h.hair === 'Hair_Beard') : null;
-    const scale = 0.88 + rnd() * 0.07, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
+    const scale = 0.85 + rnd() * 0.07, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
     const cloth = 'cloth' + Math.floor(rnd() * 5), pants = 'pants' + Math.floor(rnd() * 3), skin = 'skin' + Math.floor(rnd() * 3), hairMat = 'hair' + Math.floor(rnd() * 3);
     const [px, , pz] = body.pelvis;
     // character space → seat: pelvis over the cushion centre, bottom on the cushion, facing the screen (-z), slight turn/lean
@@ -326,7 +326,7 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   function setHouse(k) {
     if (Math.abs(k - houseLevel) < 0.002) return; houseLevel = k;
     for (const l of houseLights) l.intensity = 2 + k * 10;
-    for (const l of pools) l.intensity = k * 110;
+    for (const l of pools) l.intensity = k * 45;
     M.downlight.color.setHex(0x3a2a1c).lerp(new THREE.Color(0xffe2b8), k);
     M.sconce.color.setHex(0xffc88a).multiplyScalar(0.6 + k * 0.6);
   }
