@@ -78,6 +78,9 @@ const M = {
   pants0: new THREE.MeshStandardMaterial({  color: 0x14161c, roughness: 1, envMapIntensity: 0.04 }),
   pants1: new THREE.MeshStandardMaterial({  color: 0x2a2520, roughness: 1, envMapIntensity: 0.04 }),
   pants2: new THREE.MeshStandardMaterial({  color: 0x1e2433, roughness: 1, envMapIntensity: 0.04 }),
+  ledWarm: new THREE.MeshBasicMaterial({ color: 0x8a5a34 }),
+  booth: new THREE.MeshBasicMaterial({ color: 0x6b7f99 }),
+  runner: new THREE.MeshStandardMaterial({ map: carpetMap, color: 0xc9a08a, roughness: 1, envMapIntensity: 0.05 }),
   figure: new THREE.MeshStandardMaterial({ color: 0x0e0e12, roughness: 1, envMapIntensity: 0.03 }),   // audience: a dark shape with a faint rim of screen light, like the real thing
   paper: new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.9, envMapIntensity: 0.05 }),
   phone: new THREE.MeshBasicMaterial({ color: 0x9fc6ff }),
@@ -89,7 +92,7 @@ const M = {
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'pants0', 'pants1', 'pants2', 'figure', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'pants0', 'pants1', 'pants2', 'figure', 'runner', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
 export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
@@ -127,8 +130,23 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     mesh(new THREE.PlaneGeometry(0.9, 0.34), M.exit, sx * (hall.hallW / 2 - 0.13), 2.9, 0.4, { ry: -sx * Math.PI / 2 });
     for (let k = 0; k < 3; k++) put('speaker', BOX(0.32, 0.55, 0.32), sx * (hall.hallW / 2 - 0.3), hall.hallH * 0.55, 3 + k * backZ / 3.5);
   }
+  /* low LED strips along the wall bases and the stage apron, as in modern halls */
+  for (const sx of [-1, 1]) put('ledWarm', BOX(0.02, 0.015, backZ - 1), sx * (hall.hallW / 2 - 0.14), 0.07, backZ / 2 + 0.5);
+  put('ledWarm', BOX(hall.hallW - 2, 0.015, 0.02), 0, 0.07, hall.firstRowZ - 0.9);
+  /* projection booth window glowing on the back wall */
+  mesh(new THREE.PlaneGeometry(1.1, 0.45), M.booth, 0, hall.hallH - 0.9, backZ + 0.95, { ry: Math.PI });
+  /* aisle handrails: follow the steps, with posts every other row */
+  const rowsList = seats.filter(s => s.num === 1);
+  for (let i = 0; i < rowsList.length - 1; i++) {
+    const a = rowsList[i], b = rowsList[i + 1]; const dy = Math.max(b.y, 0.02) - Math.max(a.y, 0.02), dz = b.z - a.z; const len = Math.hypot(dy, dz), ang = Math.atan2(dy, dz);
+    for (const sx of [-1, 1]) {
+      put('steel', BOX(0.035, 0.035, len), sx * (hall.aisle / 2 + 0.04), Math.max(a.y, 0.02) + dy / 2 + 0.9, a.z + dz / 2, -ang);
+      if (i % 2 === 0) put('steel', BOX(0.03, 0.9, 0.03), sx * (hall.aisle / 2 + 0.04), Math.max(a.y, 0.02) + 0.45, a.z);
+    }
+  }
   seats.filter(s => s.num === 1).forEach(s => {
     const h = Math.max(s.y, 0.02);
+    put('runner', BOX(hall.aisle - 0.3, 0.012, hall.rowPitch), 0, h + 0.016, s.z);
     put('step', BOX(hall.hallW - 0.3, h, hall.rowPitch), 0, h / 2, s.z);
     put('floor', BOX(hall.hallW - 0.3, 0.015, hall.rowPitch), 0, h + 0.008, s.z);
     put('stepNose', BOX(hall.hallW - 0.3, 0.03, 0.06), 0, h, s.z - hall.rowPitch / 2 + 0.03);

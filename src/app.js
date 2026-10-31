@@ -5,6 +5,7 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { HALLS, CATEGORIES } from './halls.js';
 import { buildHall } from './scene.js';
@@ -51,6 +52,9 @@ let lastInteraction = 0; controls.addEventListener('start', () => { controls.aut
 /* a gentle bloom so the screen and LEDs glow a little, as they do in a dark hall */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
+/* ambient occlusion: contact shadows where seats meet floor, under armrests, between heads and seat backs */
+const gtao = LITE ? null : new GTAOPass(scene, camera, 1, 1);
+if (gtao) { gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1, thickness: 1, scale: 1.2, samples: 12, distanceFallOff: 1, screenSpaceRadius: false }); gtao.blendIntensity = 0.85; composer.addPass(gtao); }
 composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.18, 0.3, 0.92));
 composer.addPass(new OutputPass());
 
@@ -75,6 +79,7 @@ function loadHall(id, { keepUrl = false } = {}) {
   const view = buildHall(HALLS[id], scene, { lite: LITE, people: peopleData }); state.view = view;
   view.screenMesh.material.map = crisp(media.texture); view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
+  gtao?.setSceneClipBox(new THREE.Box3(new THREE.Vector3(-HALLS[id].hallW, -1, -3), new THREE.Vector3(HALLS[id].hallW, HALLS[id].hallH + 1, view.backZ + 3)));
   controls.target.copy(view.center); camera.position.copy(view.overview);
   buildSeatMap(view);
   $('payBtn').disabled = true; $('report').hidden = true; $('banner').hidden = true;
