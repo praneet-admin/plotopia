@@ -30,7 +30,12 @@ function bakeSkinned(mesh, zoneFixed) {
   const names = mesh.skeleton.bones.map(b => b.name); const si = geo.attributes.skinIndex, sw = geo.attributes.skinWeight;
   for (let i = 0; i < n; i++) {
     mesh.getVertexPosition(i, v); v.applyMatrix4(mesh.matrixWorld); pos.set([v.x, v.y, v.z], i * 3);
-    if (zoneFixed != null) zone[i] = zoneFixed; else { let best = 0, bw = -1; for (let k = 0; k < 4; k++) { const w = sw.array[i * sw.itemSize + k]; if (w > bw) { bw = w; best = si.array[i * si.itemSize + k]; } } zone[i] = zoneOf(names[best] || ''); }
+    if (zoneFixed != null) zone[i] = zoneFixed; else {
+      let best = 0, bw = -1; for (let k = 0; k < 4; k++) { const w = sw.array[i * sw.itemSize + k]; if (w > bw) { bw = w; best = si.array[i * si.itemSize + k]; } }
+      const bone = names[best] || '', restY = geo.attributes.position.getY(i), restX = Math.abs(geo.attributes.position.getX(i));
+      // head, neck and hands by bone; everything else by height in the rest pose so colour borders are clean lines
+      zone[i] = /Head|neck/.test(bone) || /hand|index|middle|pinky|ring|thumb/.test(bone) ? 1 : restY > 1.5 ? 1 : restY < 0.98 ? 2 : (restX > 0.42 && restY < 1.25 ? 1 : 0);   // forearms below the sleeve line show skin
+    }
   }
   const idx = geo.index ? Array.from(geo.index.array) : [...Array(n).keys()];
   return { pos, zone, idx };

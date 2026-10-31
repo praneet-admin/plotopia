@@ -80,13 +80,23 @@ export class ScreenMedia {
     const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.95);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
   }
+  /** Cover-fit the poster into the frame, keeping the top (where the faces are), then unsharp-mask once. */
+  buildCover(p, w, h) {
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d', { willReadFrequently: true });
+    const cover = Math.max(w / p.width, h / p.height); const dw = p.width * cover, dh = p.height * cover;
+    g.imageSmoothingQuality = 'high'; g.filter = 'contrast(1.1) saturate(1.06)';
+    g.drawImage(p, (w - dw) / 2, Math.min(0, -(dh - h) * 0.08), dw, dh);   // anchor near the top: faces, not shirts
+    g.filter = 'none';
+    const sharp = g.getImageData(0, 0, w, h), b = document.createElement('canvas'); b.width = w; b.height = h; const bg = b.getContext('2d');
+    bg.filter = 'blur(2px)'; bg.drawImage(c, 0, 0); const blur = bg.getImageData(0, 0, w, h).data, d = sharp.data;
+    for (let i = 0; i < d.length; i += 4) { for (let k = 0; k < 3; k++) { const v = d[i + k] + (d[i + k] - blur[i + k]) * 0.8; d[i + k] = v < 0 ? 0 : v > 255 ? 255 : v; } }
+    g.putImageData(sharp, 0, 0); return c;
+  }
   drawPoster(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height, p = this.poster;
     /* the film fills the whole screen edge to edge (cover crop), like projection, not a slide */
-    const cover = Math.max(w / p.width, h / p.height);
-    g.imageSmoothingQuality = 'high'; g.save(); g.filter = 'contrast(1.12) saturate(1.08)';
-    g.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
-    g.restore();
+    if (!this.coverCache || this.coverCache.src !== p) this.coverCache = { src: p, canvas: this.buildCover(p, w, h) };
+    g.drawImage(this.coverCache.canvas, 0, 0);
     g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.95)'; g.lineWidth = 7; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 8;
     const sub = 'If you can read this subtitle easily, the seat is fine.';
     g.strokeText(sub, w / 2, h * 0.92); g.fillText(sub, w / 2, h * 0.92); g.shadowBlur = 0;

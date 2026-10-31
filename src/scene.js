@@ -64,20 +64,20 @@ const M = {
   downlight: new THREE.MeshBasicMaterial({ color: 0x3a2a1c }),
   exit: new THREE.MeshBasicMaterial({ map: exitTex }),
   rowLabel: new THREE.MeshBasicMaterial({ map: letterTex }),
-  cloth0: new THREE.MeshStandardMaterial({ color: 0x15171e, roughness: 1, envMapIntensity: 0.04 }),
-  cloth1: new THREE.MeshStandardMaterial({ color: 0x332227, roughness: 1, envMapIntensity: 0.04 }),
-  cloth2: new THREE.MeshStandardMaterial({ color: 0x1f2a25, roughness: 1, envMapIntensity: 0.04 }),
-  cloth3: new THREE.MeshStandardMaterial({ color: 0x3d342c, roughness: 1, envMapIntensity: 0.04 }),
-  cloth4: new THREE.MeshStandardMaterial({ color: 0x232c44, roughness: 1, envMapIntensity: 0.04 }),
-  skin0: new THREE.MeshStandardMaterial({ color: 0x7a4e34, roughness: 0.85, envMapIntensity: 0.05 }),
-  skin1: new THREE.MeshStandardMaterial({ color: 0x4f3222, roughness: 0.85, envMapIntensity: 0.05 }),
-  skin2: new THREE.MeshStandardMaterial({ color: 0xa47453, roughness: 0.85, envMapIntensity: 0.05 }),
-  hair0: new THREE.MeshStandardMaterial({ color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
-  hair1: new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
-  hair2: new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
-  pants0: new THREE.MeshStandardMaterial({ color: 0x14161c, roughness: 1, envMapIntensity: 0.04 }),
-  pants1: new THREE.MeshStandardMaterial({ color: 0x2a2520, roughness: 1, envMapIntensity: 0.04 }),
-  pants2: new THREE.MeshStandardMaterial({ color: 0x1e2433, roughness: 1, envMapIntensity: 0.04 }),
+  cloth0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x15171e, roughness: 1, envMapIntensity: 0.04 }),
+  cloth1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x332227, roughness: 1, envMapIntensity: 0.04 }),
+  cloth2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x1f2a25, roughness: 1, envMapIntensity: 0.04 }),
+  cloth3: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x3d342c, roughness: 1, envMapIntensity: 0.04 }),
+  cloth4: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x232c44, roughness: 1, envMapIntensity: 0.04 }),
+  skin0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x7a4e34, roughness: 0.85, envMapIntensity: 0.05 }),
+  skin1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x4f3222, roughness: 0.85, envMapIntensity: 0.05 }),
+  skin2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0xa47453, roughness: 0.85, envMapIntensity: 0.05 }),
+  hair0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
+  hair1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
+  hair2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
+  pants0: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x14161c, roughness: 1, envMapIntensity: 0.04 }),
+  pants1: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x2a2520, roughness: 1, envMapIntensity: 0.04 }),
+  pants2: new THREE.MeshStandardMaterial({ emissive: 0x08080b,  color: 0x1e2433, roughness: 1, envMapIntensity: 0.04 }),
   paper: new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.9, envMapIntensity: 0.05 }),
   phone: new THREE.MeshBasicMaterial({ color: 0x9fc6ff }),
   speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6, envMapIntensity: 0.05 }),
@@ -158,6 +158,8 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   world.add(glow, glow.target);
   const fill = new THREE.SpotLight(0xc8dcff, 55, backZ * 3, Math.PI / 2.1, 1, 1.0);
   fill.position.set(0, scr.cy, 0.3); fill.target.position.set(0, 1.5, backZ); world.add(fill, fill.target);
+  /* the booth window and rear wall lights put a little light on the backs of heads, so people have shape, not just outline */
+  const booth = new THREE.SpotLight(0xfff0dc, 26, backZ * 2, 0.75, 1, 1.2); booth.position.set(0, hall.hallH - 0.8, backZ + 0.6); booth.target.position.set(0, 1.5, backZ * 0.3); world.add(booth, booth.target);
   /* house lights: warm pools from the ceiling downlights while people browse the hall (full mode only) */
   const pools = [];
   if (!lite) for (let z = 3; z < backZ; z += 4.5) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) {
@@ -225,7 +227,9 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     const t = template(s.cat);
     const sex = rnd() < 0.5 ? 'male' : 'female';
     const bodies = people.bodies.filter(b => b.sex === sex); const body = bodies[Math.floor(rnd() * bodies.length)];
-    const hairOptions = people.hairsFor(body).filter(h => sex === 'female' ? /BuzzedFemale|Long|Buns|SimpleParted/.test(h.hair) : /^.*(Buzzed|SimpleParted|Long)$/.test(h.hair) && !/Female/.test(h.hair));
+    // Long and Buns in the pack are alpha-card strips (spiky without their texture), so only solid meshes are used
+    const hairOptions = people.hairsFor(body).filter(h => sex === 'female' ? /BuzzedFemale|SimpleParted/.test(h.hair) : /Hair_Buzzed$|SimpleParted/.test(h.hair));
+    const longHair = sex === 'female' ? rnd() < 0.45 : rnd() < 0.08, bun = sex === 'female' && !longHair && rnd() < 0.3;
     const hair = hairOptions[Math.floor(rnd() * hairOptions.length)];
     const beard = sex === 'male' && rnd() < 0.3 ? people.hairsFor(body).find(h => h.hair === 'Hair_Beard') : null;
     const scale = 0.96 + rnd() * 0.08, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.8 : (rnd() - 0.5) * 0.2, lean = rnd() < 0.2 ? (rnd() - 0.5) * 0.14 : 0;
@@ -243,6 +247,9 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     if (rnd() < 0.45) put('paper', cupGeo, s.x + (rnd() < 0.5 ? -1 : 1) * (t.w / 2 - 0.03), s.y + 0.78, s.z - t.d * 0.3);
     if (rnd() < 0.06) put('phone', phoneGeo, s.x + 0.05, s.y + 0.62, s.z - 0.12, -1.1, 0, 0);
     const headY = s.y + CUSHION_TOP + (body.headY - body.seatY) * scale;
+    const hx = s.x + Math.sin(lean) * 0.4, hc = headY + 0.07 * scale, hz = s.z + 0.02;
+    if (longHair) { put(hairMat, hairCap, hx, hc + 0.012, hz - 0.004, 0, turn, lean); put(hairMat, hairLong, hx, hc - 0.1, hz + 0.045, 0, turn, lean); }
+    if (bun) put(hairMat, bunGeo, hx, hc + 0.065, hz + 0.075, 0, 0, lean);
     const bodyBox = new THREE.Mesh(BOX(0.46, 0.62, 0.3), M.proxy); bodyBox.position.set(s.x, s.y + 0.78, s.z + 0.02); bodyBox.userData.worldZ = s.z; bodyBox.userData.worldX = s.x; world.add(bodyBox); occluders.push(bodyBox);
     // Head bone sits at the base of the skull; the proxy is centred on the real head and slightly generous for hair
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), M.proxy); head.position.set(s.x + Math.sin(lean) * 0.4, headY + 0.07 * scale, s.z + 0.02); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
