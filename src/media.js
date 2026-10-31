@@ -79,19 +79,16 @@ export class ScreenMedia {
     /* cinematic finish: vignette, film grain and 2.39:1 letterbox bars */
     const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.95);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
   }
   drawPoster(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height, p = this.poster;
     /* the film fills the whole screen edge to edge (cover crop), like projection, not a slide */
     const cover = Math.max(w / p.width, h / p.height);
-    g.imageSmoothingQuality = 'high';
+    g.imageSmoothingQuality = 'high'; g.save(); g.filter = 'contrast(1.12) saturate(1.08)';
     g.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
-    const vg = g.createRadialGradient(w / 2, h / 2, h * 0.4, w / 2, h / 2, h * 1.0);
-    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
-    g.fillStyle = 'rgba(255,255,255,.03)'; for (let i = 0; i < 700; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
-    g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
+    g.restore();
+    g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.95)'; g.lineWidth = 7; g.shadowColor = 'rgba(0,0,0,.8)'; g.shadowBlur = 8;
     const sub = 'If you can read this subtitle easily, the seat is fine.';
-    g.strokeText(sub, w / 2, h * 0.93); g.fillText(sub, w / 2, h * 0.93);
+    g.strokeText(sub, w / 2, h * 0.92); g.fillText(sub, w / 2, h * 0.92); g.shadowBlur = 0;
   }
 }

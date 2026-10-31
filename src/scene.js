@@ -45,44 +45,45 @@ function letterPlane(ch, w, h) { const i = LETTERS.indexOf(ch); const g = new TH
 
 /* ---------- materials ---------- */
 const M = {
-  shell: new THREE.MeshStandardMaterial({ color: 0x1b1316, roughness: 1, side: THREE.BackSide }),
-  floor: new THREE.MeshStandardMaterial({ map: carpetMap, roughness: 1 }),
-  step: new THREE.MeshStandardMaterial({ color: 0x1a1214, roughness: 0.95 }),
-  stepNose: new THREE.MeshStandardMaterial({ color: 0x3a2e2a, roughness: 0.6, metalness: 0.4 }),
-  panelA: new THREE.MeshStandardMaterial({ map: panelMap, color: 0x8a7a7c, roughness: 1 }),
-  panelB: new THREE.MeshStandardMaterial({ map: panelMap, color: 0x5a4a4c, roughness: 1 }),
-  curtain: new THREE.MeshStandardMaterial({ map: pleatMap, roughness: 1 }),
-  frame: new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 }),
-  fabric: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, roughness: 0.95 }),
-  fabricPrime: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, color: 0xb0a0a8, roughness: 0.95 }),
-  leather: new THREE.MeshPhysicalMaterial({ color: 0x17171a, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35, bumpMap: fabricBump, bumpScale: 0.002 }),
-  leatherLite: new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5 }),
-  plastic: new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.45, metalness: 0.1 }),
-  steel: new THREE.MeshStandardMaterial({ color: 0x8c8c90, roughness: 0.35, metalness: 0.9 }),
+  shell: new THREE.MeshStandardMaterial({ color: 0x1b1316, roughness: 1, side: THREE.BackSide, envMapIntensity: 0.05 }),
+  floor: new THREE.MeshStandardMaterial({ map: carpetMap, roughness: 1, envMapIntensity: 0.05 }),
+  step: new THREE.MeshStandardMaterial({ color: 0x1a1214, roughness: 0.95, envMapIntensity: 0.05 }),
+  stepNose: new THREE.MeshStandardMaterial({ color: 0x3a2e2a, roughness: 0.6, metalness: 0.4, envMapIntensity: 0.3 }),
+  panelA: new THREE.MeshStandardMaterial({ map: panelMap, color: 0x8a7a7c, roughness: 1, envMapIntensity: 0.05 }),
+  panelB: new THREE.MeshStandardMaterial({ map: panelMap, color: 0x5a4a4c, roughness: 1, envMapIntensity: 0.05 }),
+  curtain: new THREE.MeshStandardMaterial({ map: pleatMap, color: 0x9a9a9a, roughness: 1, envMapIntensity: 0.03 }),
+  frame: new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9, envMapIntensity: 0.02 }),
+  fabric: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, roughness: 0.95, envMapIntensity: 0.06 }),
+  fabricPrime: new THREE.MeshStandardMaterial({ map: fabricMap, bumpMap: fabricBump, bumpScale: 0.004, color: 0xb0a0a8, roughness: 0.95, envMapIntensity: 0.06 }),
+  leather: new THREE.MeshPhysicalMaterial({ color: 0x17171a, roughness: 0.42, clearcoat: 0.5, clearcoatRoughness: 0.35, bumpMap: fabricBump, bumpScale: 0.002, envMapIntensity: 0.6 }),
+  leatherLite: new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5, envMapIntensity: 0.4 }),
+  plastic: new THREE.MeshStandardMaterial({ color: 0x111113, roughness: 0.45, metalness: 0.1, envMapIntensity: 0.3 }),
+  steel: new THREE.MeshStandardMaterial({ color: 0x8c8c90, roughness: 0.35, metalness: 0.9, envMapIntensity: 0.8 }),
   led: new THREE.MeshBasicMaterial({ color: 0x9fd8ff }),
   sconce: new THREE.MeshBasicMaterial({ color: 0xffc88a }),
   downlight: new THREE.MeshBasicMaterial({ color: 0x3a2a1c }),
   exit: new THREE.MeshBasicMaterial({ map: exitTex }),
   rowLabel: new THREE.MeshBasicMaterial({ map: letterTex }),
-  cloth0: new THREE.MeshStandardMaterial({ color: 0x1b1d26, roughness: 0.95 }),
-  cloth1: new THREE.MeshStandardMaterial({ color: 0x3a2a2f, roughness: 0.95 }),
-  cloth2: new THREE.MeshStandardMaterial({ color: 0x24322c, roughness: 0.95 }),
-  cloth3: new THREE.MeshStandardMaterial({ color: 0x4a4038, roughness: 0.95 }),
-  cloth4: new THREE.MeshStandardMaterial({ color: 0x2a3550, roughness: 0.95 }),
-  skin0: new THREE.MeshStandardMaterial({ color: 0x8a5a3c, roughness: 0.75 }),
-  skin1: new THREE.MeshStandardMaterial({ color: 0x5c3a28, roughness: 0.75 }),
-  skin2: new THREE.MeshStandardMaterial({ color: 0xb8865e, roughness: 0.75 }),
-  hair0: new THREE.MeshStandardMaterial({ color: 0x0e0c0b, roughness: 0.9 }),
-  hair1: new THREE.MeshStandardMaterial({ color: 0x2a1d14, roughness: 0.9 }),
-  speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6 }),
+  cloth0: new THREE.MeshStandardMaterial({ color: 0x15171e, roughness: 1, envMapIntensity: 0.04 }),
+  cloth1: new THREE.MeshStandardMaterial({ color: 0x332227, roughness: 1, envMapIntensity: 0.04 }),
+  cloth2: new THREE.MeshStandardMaterial({ color: 0x1f2a25, roughness: 1, envMapIntensity: 0.04 }),
+  cloth3: new THREE.MeshStandardMaterial({ color: 0x3d342c, roughness: 1, envMapIntensity: 0.04 }),
+  cloth4: new THREE.MeshStandardMaterial({ color: 0x232c44, roughness: 1, envMapIntensity: 0.04 }),
+  skin0: new THREE.MeshStandardMaterial({ color: 0x7a4e34, roughness: 0.85, envMapIntensity: 0.05 }),
+  skin1: new THREE.MeshStandardMaterial({ color: 0x4f3222, roughness: 0.85, envMapIntensity: 0.05 }),
+  skin2: new THREE.MeshStandardMaterial({ color: 0xa47453, roughness: 0.85, envMapIntensity: 0.05 }),
+  hair0: new THREE.MeshStandardMaterial({ color: 0x0b0a09, roughness: 1, envMapIntensity: 0.03 }),
+  hair1: new THREE.MeshStandardMaterial({ color: 0x241a12, roughness: 1, envMapIntensity: 0.03 }),
+  hair2: new THREE.MeshStandardMaterial({ color: 0x3a3330, roughness: 1, envMapIntensity: 0.03 }),
+  speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6, envMapIntensity: 0.05 }),
   beam: new THREE.MeshBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: 0.018, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
-  dust: new THREE.PointsMaterial({ color: 0xdde8ff, size: 0.018, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }),
+  dust: new THREE.PointsMaterial({ color: 0xdde8ff, size: 0.01, transparent: true, opacity: 0.1, depthWrite: false, blending: THREE.AdditiveBlending }),
   selected: new THREE.MeshStandardMaterial({ color: 0xffd98a, emissive: 0xffb340, emissiveIntensity: 1.2, roughness: 0.6 }),
   pinned: new THREE.MeshStandardMaterial({ color: 0x9fd8ff, emissive: 0x3fb4ff, emissiveIntensity: 1.2, roughness: 0.6 }),
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
 export function buildHall(hall, scene, { lite = false } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
@@ -105,7 +106,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
 
   /* ---------- room ---------- */
   mesh(new THREE.BoxGeometry(hall.hallW, hall.hallH + 0.2, len), M.shell, 0, hall.hallH / 2 - 0.1, backZ / 2 - 1, { receive: true });
-  put('floor', BOX(hall.hallW, 0.2, len), 0, -0.1, backZ / 2 - 1);
+  put('frame', BOX(hall.hallW, 0.05, len), 0, -0.025, backZ / 2 - 1);
   const houseLights = [];
   for (const sx of [-1, 1]) {
     let i = 0;
@@ -143,11 +144,19 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   put('curtain', new THREE.PlaneGeometry(scr.w + 1, (hall.hallH - scr.top) * 0.9), 0, (hall.hallH + scr.top) / 2, -0.3);
   put('frame', BOX(hall.hallW, scr.bottom + 0.2, 0.3), 0, (scr.bottom - 0.2) / 2, -0.3);
 
-  /* A real screen is the only big light source in the room: a soft wash on the front rows with faint head shadows. */
-  const glow = new THREE.SpotLight(0xc8dcff, 55, backZ * 2.2, Math.PI / 2.4, 0.9, 1.3);
+  /* The screen is the room's light: a soft, shadow-casting wash on the first rows and a very wide dim fill
+     so the back rows are not pitch black. Both take the colour of what is playing. */
+  const glow = new THREE.SpotLight(0xc8dcff, 90, backZ * 2.2, Math.PI / 2.6, 0.95, 1.3);
   glow.position.set(0, scr.cy, 0.3); glow.target.position.set(0, 2, backZ * 0.7);
-  glow.castShadow = !lite; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2;
+  glow.castShadow = !lite; glow.shadow.mapSize.set(1024, 1024); glow.shadow.bias = -0.0004; glow.shadow.camera.near = 1; glow.shadow.camera.far = backZ * 2; glow.shadow.radius = 6;
   world.add(glow, glow.target);
+  const fill = new THREE.SpotLight(0xc8dcff, 40, backZ * 3, Math.PI / 2.1, 1, 1.0);
+  fill.position.set(0, scr.cy, 0.3); fill.target.position.set(0, 1.5, backZ); world.add(fill, fill.target);
+  /* house lights: warm pools from the ceiling downlights while people browse the hall (full mode only) */
+  const pools = [];
+  if (!lite) for (let z = 3; z < backZ; z += 4.5) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) {
+    const l = new THREE.SpotLight(0xffd2a6, 0, 14, 0.55, 0.7, 1.4); l.position.set(x, hall.hallH - 0.05, z); l.target.position.set(x, 0, z + 0.3); world.add(l, l.target); pools.push(l);
+  }
 
   /* ---------- projector and its beam ---------- */
   const projY = hall.hallH - 0.9, projZ = backZ + 0.7;
@@ -175,8 +184,8 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     const part = (geo, key, x, y, z, rx = 0, name = '') => parts.push({ geo, key, x, y, z, rx, name });
     const seg = lite ? 1 : 3;
     part(new RoundedBoxGeometry(w - 0.1, 0.16, d - 0.08, seg, 0.05), soft, 0, 0.46, -0.02, -0.08, 'cushion');
-    part(new RoundedBoxGeometry(w - 0.1, rec ? 0.78 : 0.62, 0.13, seg, 0.05), soft, 0, 0.46 + (rec ? 0.42 : 0.34), d / 2 - 0.08, 0.2, 'back');
-    if (rec) part(new RoundedBoxGeometry(w - 0.18, 0.18, 0.1, 2, 0.04), soft, 0, 1.22, d / 2 - 0.02, 0.2, 'headrest');
+    part(new RoundedBoxGeometry(w - 0.1, rec ? 0.66 : 0.62, 0.13, seg, 0.05), soft, 0, 0.46 + (rec ? 0.36 : 0.34), d / 2 - 0.08, 0.2, 'back');
+    if (rec) part(new RoundedBoxGeometry(w - 0.18, 0.16, 0.1, 2, 0.04), soft, 0, 1.02, d / 2 - 0.02, 0.2, 'headrest');
     if (rec) part(new RoundedBoxGeometry(w - 0.14, 0.1, 0.4, 2, 0.03), soft, 0, 0.36, -d / 2 - 0.1, 0.3, 'footrest');
     for (const sx of [-1, 1]) {
       part(BOX(0.06, 0.24, d * 0.78), 'plastic', sx * (w / 2 - 0.03), 0.58, 0);
@@ -187,39 +196,48 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   };
   /* A seated person seen from behind: sloped shoulders, a slightly oval head, hair with some variety,
      arms resting on the armrests, varied height, skin and clothing. Built from lathe and capsule shapes. */
-  const torsoProfile = new THREE.LatheGeometry([[0.0, 0.42], [0.2, 0.44], [0.21, 0.52], [0.17, 0.64], [0.19, 0.78], [0.225, 0.9], [0.2, 0.97], [0.07, 1.0], [0.0, 1.0]].map(([r, y]) => new THREE.Vector2(r, y)), 18).scale(1, 1, 0.62);
-  const headGeo = new THREE.SphereGeometry(0.1, 16, 14).scale(0.9, 1.08, 0.95);
-  const neckGeo = new THREE.CylinderGeometry(0.045, 0.055, 0.12, 10);
+  const torsoProfile = new THREE.LatheGeometry([[0.0, 0.42], [0.2, 0.44], [0.21, 0.52], [0.17, 0.64], [0.19, 0.78], [0.24, 0.9], [0.21, 0.96], [0.075, 0.99], [0.0, 0.99]].map(([r, y]) => new THREE.Vector2(r, y)), 18).scale(1, 1, 0.6);
+  const headGeo = new THREE.SphereGeometry(0.093, 18, 14).scale(0.88, 1.0, 0.94);
+  const neckGeo = new THREE.CylinderGeometry(0.042, 0.05, 0.1, 10);
+  const collarGeo = new THREE.TorusGeometry(0.075, 0.016, 6, 16).rotateX(Math.PI / 2);
+  const earGeo = new THREE.SphereGeometry(0.018, 8, 6).scale(0.6, 1, 1);
   const armGeo = new THREE.CapsuleGeometry(0.042, 0.26, 3, 8);
-  const handGeo = new THREE.SphereGeometry(0.045, 8, 6).scale(1, 0.6, 1.2);
-  const hairCap = new THREE.SphereGeometry(0.106, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.72).scale(0.93, 1.06, 0.99);
-  const hairLong = new THREE.CylinderGeometry(0.1, 0.09, 0.3, 12, 1, false, Math.PI * 0.5, Math.PI).scale(0.95, 1, 0.8);
-  const bunGeo = new THREE.SphereGeometry(0.05, 10, 8);
+  const handGeo = new THREE.SphereGeometry(0.042, 8, 6).scale(1, 0.6, 1.2);
+  const hairCap = new THREE.SphereGeometry(0.097, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.74).scale(0.89, 1.01, 0.95);
+  const hoodCap = new THREE.SphereGeometry(0.108, 18, 12, 0, Math.PI * 2, 0, Math.PI * 0.8).scale(0.92, 1.02, 0.98);
+  const hairLong = new THREE.CylinderGeometry(0.09, 0.085, 0.26, 12, 1, false, Math.PI * 0.5, Math.PI).scale(0.95, 1, 0.8);
+  const bunGeo = new THREE.SphereGeometry(0.045, 10, 8);
   let seed = 7;
   const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  /* A seated person seen from behind. In a dark hall they are mostly silhouette and screen rim light, so
+     proportion and outline matter most: oval head on a visible neck, ears, collar, sloped shoulders, arms on the rests. */
   function stampPerson(s) {
-    const tall = (rnd() - 0.5) * 0.1, turn = (rnd() - 0.5) * 0.5, lean = (rnd() - 0.5) * 0.06, y = s.y + tall;
-    const cloth = 'cloth' + Math.floor(rnd() * 5), skin = 'skin' + Math.floor(rnd() * 3), hair = 'hair' + Math.floor(rnd() * 2), style = rnd();
-    const z = s.z + 0.02;
-    put(cloth, torsoProfile, s.x, y, z, 0, turn * 0.3);
-    put(skin, neckGeo, s.x + lean, y + 1.03, z);
-    put(skin, headGeo, s.x + lean, y + EYE_HEIGHT + 0.03, z, 0, turn);
-    if (style < 0.55) put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn);
-    else if (style < 0.8) { put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn); put(hair, hairLong, s.x + lean, y + EYE_HEIGHT - 0.1, z + 0.04, 0, turn); }
-    else { put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn); put(hair, bunGeo, s.x + lean, y + EYE_HEIGHT + 0.08, z + 0.08); }
-    for (const sx of [-1, 1]) {   // upper arms slope from the shoulders down and forward to the armrests
-      put(cloth, armGeo, s.x + sx * 0.24, y + 0.78, z - 0.08, 0.5, 0, sx * 0.12);
-      put(skin, handGeo, s.x + sx * 0.26, y + 0.66, z - 0.2);
+    const tall = (rnd() - 0.5) * 0.1, lean = rnd() < 0.25 ? (rnd() - 0.5) * 0.18 : 0, turn = rnd() < 0.15 ? (rnd() - 0.5) * 0.9 : (rnd() - 0.5) * 0.2;
+    const y = s.y + tall, z = s.z + 0.02;
+    const cloth = 'cloth' + Math.floor(rnd() * 5), skin = 'skin' + Math.floor(rnd() * 3), hair = 'hair' + Math.floor(rnd() * 3), style = rnd();
+    const hx = s.x + Math.sin(lean) * 0.35, hy = y + EYE_HEIGHT - 0.02;   // head centre, shifted by the lean
+    put(cloth, torsoProfile, s.x, y, z, 0, turn * 0.3, lean);
+    put(cloth, collarGeo, s.x + Math.sin(lean) * 0.2, y + 0.985, z, 0, 0, lean);
+    put(skin, neckGeo, hx - Math.sin(lean) * 0.05, hy - 0.12, z, 0, 0, lean);
+    put(skin, headGeo, hx, hy, z, 0, turn, lean);
+    for (const sx of [-1, 1]) put(skin, earGeo, hx + sx * (0.083 * Math.cos(turn)), hy - 0.005, z + sx * 0.083 * Math.sin(turn), 0, turn, lean);
+    if (style < 0.5) put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean);
+    else if (style < 0.72) { put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean); put(hair, hairLong, hx, hy - 0.1, z + 0.045, 0, turn, lean); }
+    else if (style < 0.86) { put(hair, hairCap, hx, hy + 0.012, z - 0.004, 0, turn, lean); put(hair, bunGeo, hx, hy + 0.065, z + 0.075, 0, 0, lean); }
+    else put(cloth, hoodCap, hx, hy + 0.01, z + 0.01, 0, turn, lean);   // hood up
+    for (const sx of [-1, 1]) {
+      put(cloth, armGeo, s.x + sx * 0.245, y + 0.78, z - 0.08, 0.5, 0, sx * 0.12);
+      put(skin, handGeo, s.x + sx * 0.265, y + 0.66, z - 0.2);
     }
-    const body = new THREE.Mesh(BOX(0.46, 0.64, 0.3), M.proxy); body.position.set(s.x, y + 0.8, z); body.userData.worldZ = s.z; body.userData.worldX = s.x; world.add(body); occluders.push(body);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), M.proxy); head.position.set(s.x + lean, y + EYE_HEIGHT + 0.03, z); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
+    const body = new THREE.Mesh(BOX(0.48, 0.62, 0.3), M.proxy); body.position.set(s.x, y + 0.78, z); body.userData.worldZ = s.z; body.userData.worldX = s.x; world.add(body); occluders.push(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 6), M.proxy); head.position.set(hx, hy, z); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
   }
   for (const s of seats) {
     const t = template(s.cat);
     for (const p of t.parts) put(p.key, p.geo, s.x + p.x, s.y + p.y, s.z + p.z, p.rx);
     /* invisible proxies: one for picking the seat, one thin slab where the backrest is for sightlines */
     const pick = new THREE.Mesh(BOX(t.w, 1.2, t.d + 0.1), M.proxy); pick.position.set(s.x, s.y + 0.6, s.z); pick.userData.seat = s; world.add(pick); pickables.push(pick); s.mesh = pick;
-    const backH = s.cat === 'recliner' ? 1.35 : 1.1;
+    const backH = s.cat === 'recliner' ? 1.12 : 1.1;
     const back = new THREE.Mesh(BOX(t.w - 0.1, backH, 0.13), M.proxy); back.position.set(s.x, s.y + backH / 2, s.z + t.d / 2 - 0.05); back.userData.worldZ = back.position.z; back.userData.worldX = s.x; world.add(back); occluders.push(back);
     if (s.sold) stampPerson(s);
   }
@@ -258,10 +276,11 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   let houseLevel = -1;
   function setHouse(k) {
     if (Math.abs(k - houseLevel) < 0.002) return; houseLevel = k;
-    for (const l of houseLights) l.intensity = 3.5 + k * 14;
+    for (const l of houseLights) l.intensity = 2 + k * 10;
+    for (const l of pools) l.intensity = k * 110;
     M.downlight.color.setHex(0x3a2a1c).lerp(new THREE.Color(0xffe2b8), k);
     M.sconce.color.setHex(0xffc88a).multiplyScalar(0.6 + k * 0.6);
   }
 
-  return { hall, scr, seats, pickables, occluders, screenMesh, glow, center, overview, backZ, dispose, highlight, tick, setHouse };
+  return { hall, scr, seats, pickables, occluders, screenMesh, glow, fill, center, overview, backZ, dispose, highlight, tick, setHouse };
 }

@@ -35,8 +35,8 @@ renderer.domElement.addEventListener('webglcontextlost', e => {
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x06070a);
 /* a dim indoor environment map gives leather, steel and the screen frame believable reflections */
-{ const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.35; }
-const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.5), ambient = new THREE.AmbientLight(0x3a3238, 0.45);
+{ const pmrem = new THREE.PMREMGenerator(renderer); scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture; pmrem.dispose(); scene.environmentIntensity = 0.12; }
+const hemi = new THREE.HemisphereLight(0x8f93a8, 0x2a1c1c, 0.12), ambient = new THREE.AmbientLight(0x3a3238, 0.05);
 scene.add(hemi, ambient);
 let house = 1;   // 1 = house lights up (browsing), 0 = lights down (seated)
 
@@ -50,7 +50,7 @@ let lastInteraction = 0; controls.addEventListener('start', () => { controls.aut
 /* a gentle bloom so the screen and LEDs glow a little, as they do in a dark hall */
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.28, 0.45, 0.9));
+composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.18, 0.3, 0.92));
 composer.addPass(new OutputPass());
 
 const media = new ScreenMedia();
@@ -58,7 +58,8 @@ const media = new ScreenMedia();
 const POSTER_URL = 'https://upload.wikimedia.org/wikipedia/en/1/1c/Meiyazhagan_poster.jpg';
 media.loadPoster(POSTER_URL);
 const posterImg = document.getElementById('posterImg'); posterImg.src = POSTER_URL; posterImg.onerror = () => posterImg.remove();
-media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = t; state.view.screenMesh.material.needsUpdate = true; } };
+const crisp = t => { t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.anisotropy = 8; return t; };
+media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = crisp(t); state.view.screenMesh.material.needsUpdate = true; } };
 
 /* ---------------- state ---------------- */
 const state = { hallId: 'audi3', view: null, selected: null, pinned: null, picking: false, mode: 'hall', heat: false, gyro: false, scores: new Map(), flying: null };
@@ -71,7 +72,7 @@ function loadHall(id, { keepUrl = false } = {}) {
   state.view?.dispose(); state.selected = state.pinned = null; state.picking = false; state.scores.clear();
   state.hallId = id; $('hallSelect').value = id;
   const view = buildHall(HALLS[id], scene, { lite: LITE }); state.view = view;
-  view.screenMesh.material.map = media.texture; view.screenMesh.material.needsUpdate = true;
+  view.screenMesh.material.map = crisp(media.texture); view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
   controls.target.copy(view.center); camera.position.copy(view.overview);
   buildSeatMap(view);
@@ -372,9 +373,9 @@ renderer.setAnimationLoop(now => {
     frameCount = 0; fpsWindowStart = now;
   }
   media.tick(now); state.view?.tick(now / 1000);
-  if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); } }
+  if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
-  hemi.intensity = 0.5 + house * 2.6; ambient.intensity = 0.45 + house * 1.6; renderer.toneMappingExposure = 1 + house * 0.7; state.view?.setHouse(house);
+  hemi.intensity = 0.12 + house * (LITE ? 1.2 : 0.5); ambient.intensity = 0.05 + house * (LITE ? 0.5 : 0.2); renderer.toneMappingExposure = 1 + house * 0.3; state.view?.setHouse(house);
   const f = state.flying;
   if (f) {
     const k = Math.min(1, (now - f.t0) / f.dur), e = ease(k);
