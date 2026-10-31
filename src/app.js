@@ -6,6 +6,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/addons/postprocessing/GTAOPass.js';
+import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { HALLS, CATEGORIES } from './halls.js';
 import { buildHall } from './scene.js';
@@ -57,6 +58,19 @@ const gtao = LITE ? null : new GTAOPass(scene, camera, 1, 1);
 if (gtao) { gtao.updateGtaoMaterial({ radius: 0.35, distanceExponent: 1, thickness: 1, scale: 1.2, samples: 12, distanceFallOff: 1, screenSpaceRadius: false }); gtao.blendIntensity = 0.85; composer.addPass(gtao); }
 composer.addPass(new UnrealBloomPass(new THREE.Vector2(1, 1), 0.18, 0.3, 0.92));
 composer.addPass(new OutputPass());
+/* cinematic grade: soft vignette, a touch of contrast, fine grain */
+const grade = new ShaderPass({
+  uniforms: { tDiffuse: { value: null }, time: { value: 0 }, amount: { value: 1 } },
+  vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float time; uniform float amount; varying vec2 vUv;
+    float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)) + time) * 43758.5453); }
+    void main(){ vec4 c = texture2D(tDiffuse, vUv);
+      vec2 d = vUv - 0.5; float vig = 1.0 - smoothstep(0.35, 0.95, length(d) * 1.25) * 0.45 * amount;
+      vec3 col = (c.rgb - 0.5) * (1.0 + 0.06 * amount) + 0.5;
+      col += (hash(vUv * 1000.0) - 0.5) * 0.018 * amount;
+      gl_FragColor = vec4(col * vig, c.a); }`
+});
+if (!LITE) composer.addPass(grade);
 
 const media = new ScreenMedia();
 // Official poster via Wikipedia's fair-use copy; a licensed, higher-resolution image from the distributor should replace this URL in production.
@@ -390,7 +404,7 @@ renderer.setAnimationLoop(now => {
     if (now > warmUntil && !state.flying && document.visibilityState === 'visible') { slowWindows = fps < 24 ? slowWindows + 1 : 0; if (slowWindows >= 2 && quality === 'high') setQuality('low'); }
     frameCount = 0; fpsWindowStart = now;
   }
-  media.tick(now); state.view?.tick(now / 1000);
+  media.tick(now); state.view?.tick(now / 1000); grade.uniforms.time.value = (now / 1000) % 100;
   if (state.view && now - lastTint > 300) { lastTint = now; const c = media.averageColor(); if (c) { state.view.glow.color.lerp(c, 0.35); state.view.fill.color.copy(state.view.glow.color); } }
   const houseTarget = state.mode === 'hall' ? 1 : 0; house += (houseTarget - house) * 0.04;
   hemi.intensity = 0.1 + house * (LITE ? 0.5 : 0.2); ambient.intensity = 0.04 + house * (LITE ? 0.2 : 0.06); renderer.toneMappingExposure = 1 + house * 0.12; state.view?.setHouse(house);

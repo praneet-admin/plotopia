@@ -154,7 +154,20 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     for (const sx of [-1, 1]) put('rowLabel', letterPlane(s.row, 0.16, 0.16), sx * (hall.aisle / 2 + 0.12), h + 0.012, s.z + hall.rowPitch * 0.1, -Math.PI / 2);
   });
   put('floor', BOX(hall.hallW - 0.3, 0.02, hall.firstRowZ - 1), 0, 0.01, (hall.firstRowZ - 1) / 2 + 0.5);
-  for (let z = 3; z < backZ; z += 3) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) put('downlight', new THREE.CircleGeometry(0.12, 12), x, hall.hallH - 0.01, z, Math.PI / 2);
+  /* tiered ceiling: three dark slabs stepping down toward the screen, recessed downlight rings and air vents */
+  const tiers = 3; for (let k = 0; k < tiers; k++) {   // downward-facing planes: seen from inside, invisible to the overview camera above
+    const z0 = 1 + (backZ - 1) * k / tiers, z1 = 1 + (backZ - 1) * (k + 1) / tiers;
+    put('step', new THREE.PlaneGeometry(hall.hallW - 0.1, z1 - z0 - 0.3), 0, hall.hallH - 0.22 - k * 0.22, (z0 + z1) / 2, Math.PI / 2);
+    put('step', new THREE.PlaneGeometry(hall.hallW - 0.1, 0.22), 0, hall.hallH - 0.11 - k * 0.22, z0 + 0.15, 0, Math.PI);   // the step face between tiers, facing the audience
+  }
+  for (let z = 3; z < backZ; z += 3) for (const x of [-hall.hallW / 3, 0, hall.hallW / 3]) {
+    const k = Math.min(tiers - 1, Math.floor((z - 1) / ((backZ - 1) / tiers))), cy = hall.hallH - 0.23 - k * 0.22;
+    put('downlight', new THREE.CircleGeometry(0.1, 12), x, cy, z, Math.PI / 2);
+    put('steel', new THREE.RingGeometry(0.1, 0.14, 16), x, cy - 0.002, z, Math.PI / 2);
+  }
+  for (const sx of [-1, 1]) for (let z = 4; z < backZ; z += 6) put('plastic', BOX(0.6, 0.02, 0.3), sx * hall.hallW / 4, hall.hallH - 0.24, z);   // vent grilles
+  /* exit doors under the signs */
+  for (const sx of [-1, 1]) { put('frame', BOX(0.06, 2.1, 1.0), sx * (hall.hallW / 2 - 0.1), 1.05, 0.9); put('steel', BOX(0.02, 0.04, 0.3), sx * (hall.hallW / 2 - 0.14), 1.0, 1.1); }
 
   /* ---------- screen: slightly curved, with pleated masking and a black frame ---------- */
   const sag = scr.w * 0.025;
@@ -257,7 +270,7 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
     const [px, , pz] = body.pelvis;
     // character space → seat: pelvis over the cushion centre, bottom on the cushion, facing the screen (-z), slight turn/lean
     const m = new THREE.Matrix4().makeTranslation(s.x, s.y, s.z + 0.02)
-      .multiply(new THREE.Matrix4().makeRotationY(Math.PI + turn + body.yaw))
+      .multiply(new THREE.Matrix4().makeRotationY(Math.PI + turn + body.yaw + (s.yaw || 0)))
       .multiply(new THREE.Matrix4().makeRotationZ(lean))
       .multiply(new THREE.Matrix4().makeScale(scale, scale, scale))
       .multiply(new THREE.Matrix4().makeTranslation(-px, CUSHION_TOP - body.seatY, -pz));
@@ -302,9 +315,10 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   }
   for (const s of seats) {
     const t = template(s.cat);
-    for (const p of t.parts) put(p.key, p.geo, s.x + p.x, s.y + p.y, s.z + p.z, p.rx);
+    { const c = Math.cos(s.yaw || 0), sn = Math.sin(s.yaw || 0);   // rotate the template about the seat centre
+      for (const p of t.parts) put(p.key, p.geo, s.x + p.x * c + p.z * sn, s.y + p.y, s.z - p.x * sn + p.z * c, p.rx, s.yaw || 0); }
     /* invisible proxies: one for picking the seat, one thin slab where the backrest is for sightlines */
-    const pick = new THREE.Mesh(BOX(t.w, 1.2, t.d + 0.1), M.proxy); pick.position.set(s.x, s.y + 0.6, s.z); pick.userData.seat = s; world.add(pick); pickables.push(pick); s.mesh = pick;
+    const pick = new THREE.Mesh(BOX(t.w, 1.2, t.d + 0.1), M.proxy); pick.position.set(s.x, s.y + 0.6, s.z); pick.rotation.y = s.yaw || 0; pick.userData.seat = s; world.add(pick); pickables.push(pick); s.mesh = pick;
     const backH = s.cat === 'recliner' ? 1.12 : 1.1;
     const back = new THREE.Mesh(BOX(t.w - 0.1, backH, 0.13), M.proxy); back.position.set(s.x, s.y + backH / 2, s.z + t.d / 2 - 0.05); back.userData.worldZ = back.position.z; back.userData.worldX = s.x; world.add(back); occluders.push(back);
     if (s.sold) stampPerson(s);

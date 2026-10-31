@@ -68,7 +68,12 @@ export function layoutSeats(h) {
     for (let side = -1; side <= 1; side += 2)
       for (let i = 0; i < perSide; i++)
         rowSeats.push({ row, r, x: side * (h.aisle / 2 + cat.pitch * (i + 0.5)) + stagger, y, z, cat: catId, sold: rnd() < h.occupancy(r) });
-    rowSeats.sort((a, b) => a.x - b.x).forEach((s, i) => { s.num = i + 1; s.id = row + (i + 1); s.aisleAfter = i === perSide - 1; seats.push(s); });
+    rowSeats.sort((a, b) => a.x - b.x).forEach((s, i) => {
+      s.num = i + 1; s.id = row + (i + 1); s.aisleAfter = i === perSide - 1;
+      s.z += s.x * s.x * 0.006;                 // rows curve gently toward the screen
+      s.yaw = Math.atan2(s.x, s.z) * 0.85;      // every seat turned a little to face the screen centre
+      seats.push(s);
+    });
   });
   return seats;
 }
