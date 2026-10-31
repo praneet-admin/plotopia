@@ -78,6 +78,7 @@ const M = {
   pants0: new THREE.MeshStandardMaterial({  color: 0x14161c, roughness: 1, envMapIntensity: 0.04 }),
   pants1: new THREE.MeshStandardMaterial({  color: 0x2a2520, roughness: 1, envMapIntensity: 0.04 }),
   pants2: new THREE.MeshStandardMaterial({  color: 0x1e2433, roughness: 1, envMapIntensity: 0.04 }),
+  figure: new THREE.MeshStandardMaterial({ color: 0x0e0e12, roughness: 1, envMapIntensity: 0.03 }),   // audience: a dark shape with a faint rim of screen light, like the real thing
   paper: new THREE.MeshStandardMaterial({ color: 0xd9d4c8, roughness: 0.9, envMapIntensity: 0.05 }),
   phone: new THREE.MeshBasicMaterial({ color: 0x9fc6ff }),
   speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6, envMapIntensity: 0.05 }),
@@ -88,7 +89,7 @@ const M = {
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'pants0', 'pants1', 'pants2', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'hair2', 'pants0', 'pants1', 'pants2', 'figure', 'paper', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
 export function buildHall(hall, scene, { lite = false, people = null } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
@@ -242,9 +243,9 @@ export function buildHall(hall, scene, { lite = false, people = null } = {}) {
       .multiply(new THREE.Matrix4().makeRotationZ(lean))
       .multiply(new THREE.Matrix4().makeScale(scale, scale, scale))
       .multiply(new THREE.Matrix4().makeTranslation(-px, CUSHION_TOP - body.seatY, -pz));
-    const zoneMat = [cloth, skin, pants, hairMat];
-    for (let z = 0; z < 3; z++) { const g = people.geometryFor(body, z); if (g) putM(zoneMat[z], g, m); }
-    for (const h of [hair, beard]) if (h) { const g = people.geometryFor(h, 3); if (g) putM(hairMat, g, m); }
+    // one material for the whole figure: no skin, clothing or hair detail to read up close, only the human shape
+    for (let z = 0; z < 3; z++) { const g = people.geometryFor(body, z); if (g) putM('figure', g, m); }
+    for (const h of [hair, beard]) if (h) { const g = people.geometryFor(h, 3); if (g) putM('figure', g, m); }
     if (rnd() < 0.45) put('paper', cupGeo, s.x + (rnd() < 0.5 ? -1 : 1) * (t.w / 2 - 0.03), s.y + 0.78, s.z - t.d * 0.3);
     if (rnd() < 0.06) put('phone', phoneGeo, s.x + 0.05, s.y + 0.62, s.z - 0.12, -1.1, 0, 0);
     const headY = s.y + CUSHION_TOP + (body.headY - body.seatY) * scale;
