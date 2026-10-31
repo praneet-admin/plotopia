@@ -391,6 +391,10 @@ function readUrl() {
   const hall = HALLS[p.get('hall')] ? p.get('hall') : 'audi3';
   loadHall(hall, { keepUrl: true });
   const find = id => state.view.seats.find(s => s.id === id && !s.sold);
+  if (p.get('error') === 'taken' && p.get('seat')) {   // the platform could not hold this seat: someone got it first
+    for (const id of p.get('seat').split(',')) { const t = state.view.seats.find(x => x.id === id); if (t) { t.sold = true; t.btn.classList.add('sold'); t.btn.disabled = true; } }
+    setTimeout(() => toast(`${p.get('seat')} was just taken by someone else. Pick another seat.`), 600);
+  }
   const seat = find(p.get('seat')), pin = find(p.get('pin'));
   if (pin && seat && pin !== seat) { selectSeat(pin); $('compareBtn').onclick(); selectSeat(seat); }
   else if (seat) selectSeat(seat);
