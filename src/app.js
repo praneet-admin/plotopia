@@ -73,10 +73,10 @@ const grade = new ShaderPass({
 if (!LITE) composer.addPass(grade);
 
 const media = new ScreenMedia();
-// Official poster via Wikipedia's fair-use copy; a licensed, higher-resolution image from the distributor should replace this URL in production.
-const POSTER_URL = 'https://upload.wikimedia.org/wikipedia/en/1/1c/Meiyazhagan_poster.jpg';
-media.loadPoster(POSTER_URL);
-const posterImg = document.getElementById('posterImg'); posterImg.src = POSTER_URL; posterImg.onerror = () => posterImg.remove();
+// One fixed image on every screen (the platform no longer passes a poster); file lives in assets/.
+const SCREEN_IMAGE = 'assets/screen-matrix.webp';
+media.loadPoster(SCREEN_IMAGE);
+const posterImg = document.getElementById('posterImg'); posterImg.src = SCREEN_IMAGE; posterImg.onerror = () => posterImg.remove();
 const crisp = t => { t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; t.anisotropy = 8; return t; };
 media.onchange = t => { if (state.view) { state.view.screenMesh.material.map = crisp(t); state.view.screenMesh.material.needsUpdate = true; } };
 
@@ -374,7 +374,6 @@ function applyShow() {
   if (SHOW.cert) $('mvCert').textContent = SHOW.cert;
   if (SHOW.title || SHOW.lang) { const parts = [SHOW.lang, '2D', SHOW.runtime, SHOW.genre, SHOW.cast].filter(Boolean); $('mvMeta').textContent = parts.join(' · ') || SHOW.title; }
   if (SHOW.timeLabel) { $('t0').hidden = $('t2').hidden = true; $('t1').textContent = `${SHOW.dateLabel} · ${SHOW.timeLabel}`; $('t1').classList.add('active'); }
-  if (SHOW.poster && /^https:\/\//.test(SHOW.poster)) { media.loadPoster(SHOW.poster); posterImg.src = SHOW.poster; }
   if (SHOW.ret && /^https?:\/\//.test(SHOW.ret)) $('payBtn').dataset.handoff = '1';
 }
 applyShow();

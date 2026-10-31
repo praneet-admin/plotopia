@@ -84,8 +84,8 @@ export class ScreenMedia {
   buildCover(p, w, h) {
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d', { willReadFrequently: true });
     const cover = Math.max(w / p.width, h / p.height); const dw = p.width * cover, dh = p.height * cover;
-    g.imageSmoothingQuality = 'high'; g.filter = 'contrast(1.1) saturate(1.06)';
-    g.drawImage(p, (w - dw) / 2, Math.min(0, -(dh - h) * 0.08), dw, dh);   // anchor near the top: faces, not shirts
+    g.fillStyle = '#000'; g.fillRect(0, 0, w, h); g.imageSmoothingQuality = 'high'; g.filter = 'contrast(1.06) saturate(1.04)';
+    g.drawImage(p, (w - dw) / 2, (h - dh) / 2, dw, dh);   // fill the screen, centred
     g.filter = 'none';
     const sharp = g.getImageData(0, 0, w, h), b = document.createElement('canvas'); b.width = w; b.height = h; const bg = b.getContext('2d');
     bg.filter = 'blur(2px)'; bg.drawImage(c, 0, 0); const blur = bg.getImageData(0, 0, w, h).data, d = sharp.data;
