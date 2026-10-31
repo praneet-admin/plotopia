@@ -15,17 +15,17 @@ function dress(part) {
   const nb = Array.from({ length: n }, () => new Set());
   for (let i = 0; i < idx.length; i += 3) { const a = idx[i], b = idx[i + 1], c = idx[i + 2]; nb[a].add(b).add(c); nb[b].add(a).add(c); nb[c].add(a).add(b); }
   const P = pos.array; const Z = zone.array; const soft = i => Z[i] === 0 || Z[i] === 2;
-  for (let it = 0; it < 6; it++) {   // Laplacian smoothing inside cloth/trouser zones only
+  // feather: vertices on a zone border (collar, cuffs, waist) are left alone; the effect ramps up over four rings
+  const hop = new Float32Array(n).fill(4);
+  for (let i = 0; i < n; i++) for (const j of nb[i]) if (Z[j] !== Z[i]) { hop[i] = 0; break; }
+  for (let r = 1; r <= 3; r++) for (let i = 0; i < n; i++) if (hop[i] === 4) for (const j of nb[i]) if (hop[j] === r - 1) { hop[i] = r; break; }
+  for (let it = 0; it < 6; it++) {   // Laplacian smoothing inside cloth/trouser zones, feathered at the borders
     const out = new Float32Array(P);
-    for (let i = 0; i < n; i++) if (soft(i)) { let sx = 0, sy = 0, sz = 0, k = 0; for (const j of nb[i]) if (Z[j] === Z[i]) { sx += P[j * 3]; sy += P[j * 3 + 1]; sz += P[j * 3 + 2]; k++; } if (k > 2) { out[i * 3] = P[i * 3] * 0.4 + (sx / k) * 0.6; out[i * 3 + 1] = P[i * 3 + 1] * 0.4 + (sy / k) * 0.6; out[i * 3 + 2] = P[i * 3 + 2] * 0.4 + (sz / k) * 0.6; } }
+    for (let i = 0; i < n; i++) if (soft(i) && hop[i] > 0) { let sx = 0, sy = 0, sz = 0, k = 0; for (const j of nb[i]) if (Z[j] === Z[i]) { sx += P[j * 3]; sy += P[j * 3 + 1]; sz += P[j * 3 + 2]; k++; } if (k > 2) { const a = 0.6 * (hop[i] / 4); out[i * 3] = P[i * 3] * (1 - a) + (sx / k) * a; out[i * 3 + 1] = P[i * 3 + 1] * (1 - a) + (sy / k) * a; out[i * 3 + 2] = P[i * 3 + 2] * (1 - a) + (sz / k) * a; } }
     P.set(out);
   }
   w.computeVertexNormals(); const N = w.attributes.normal.array;
-  // feather: no push right at a zone border (collar, cuffs, waist), full push three rings in, so edges stay clean
-  const hop = new Float32Array(n).fill(3);
-  for (let i = 0; i < n; i++) for (const j of nb[i]) if (Z[j] !== Z[i]) { hop[i] = 0; break; }
-  for (let r = 1; r <= 2; r++) for (let i = 0; i < n; i++) if (hop[i] === 3) for (const j of nb[i]) if (hop[j] === r - 1) { hop[i] = r; break; }
-  for (let i = 0; i < n; i++) { const d = (Z[i] === 0 ? 0.022 : Z[i] === 2 ? 0.012 : 0) * (hop[i] / 3); if (d) { P[i * 3] += N[i * 3] * d; P[i * 3 + 1] += N[i * 3 + 1] * d; P[i * 3 + 2] += N[i * 3 + 2] * d; } }
+  for (let i = 0; i < n; i++) { const d = (Z[i] === 0 ? 0.022 : Z[i] === 2 ? 0.012 : 0) * (hop[i] / 4); if (d) { P[i * 3] += N[i * 3] * d; P[i * 3 + 1] += N[i * 3 + 1] * d; P[i * 3 + 2] += N[i * 3 + 2] * d; } }
   return { pos: Float32Array.from(P), zone: Uint8Array.from(Z), idx: Array.from(idx) };
 }
 import fs from 'node:fs'; import path from 'node:path';
