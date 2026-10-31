@@ -80,29 +80,18 @@ export class ScreenMedia {
     const vg = g.createRadialGradient(w / 2, h / 2, h * 0.35, w / 2, h / 2, h * 0.95);
     vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.5)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
     g.fillStyle = 'rgba(255,255,255,.035)'; for (let i = 0; i < 900; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
-    const bar = (h - w / 2.39) / 2; g.fillStyle = '#000'; g.fillRect(0, 0, w, bar); g.fillRect(0, h - bar, w, bar);
   }
   drawPoster(t) {
     const g = this.ctx, w = this.canvas.width, h = this.canvas.height, p = this.poster;
-    /* blurred, darkened poster fills the frame (rendered once and cached: canvas blur is expensive) */
-    if (!this.bgCache || this.bgCache.src !== p) {
-      const bg = document.createElement('canvas'); bg.width = w; bg.height = h; const bgx = bg.getContext('2d');
-      bgx.filter = 'blur(28px) brightness(.45)';
-      const cover = Math.max(w / p.width, h / p.height) * 1.15;
-      bgx.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
-      this.bgCache = { src: p, canvas: bg };
-    }
-    g.drawImage(this.bgCache.canvas, 0, 0);
-    const ph = h * 0.86, pw = ph * p.width / p.height, px = (w - pw) / 2, py = (h - ph) / 2;
-    g.shadowColor = 'rgba(0,0,0,.7)'; g.shadowBlur = 40; g.fillStyle = '#000'; g.fillRect(px, py, pw, ph); g.shadowBlur = 0;
-    g.drawImage(p, px, py, pw, ph);
-    g.textAlign = 'left'; g.fillStyle = 'rgba(255,248,230,.95)'; g.font = "800 44px 'Noto Sans Tamil',sans-serif"; g.fillText('மெய்யழகன்', px + pw + 50, h * 0.42);
-    g.fillStyle = 'rgba(255,248,230,.75)'; g.font = '600 24px Inter,sans-serif'; g.fillText('MEIYAZHAGAN', px + pw + 52, h * 0.48);
-    g.font = '400 18px Inter,sans-serif'; g.fillText('Karthi · Arvind Swamy', px + pw + 52, h * 0.54); g.fillText('A film by C. Prem Kumar', px + pw + 52, h * 0.585);
-    g.fillStyle = 'rgba(255,248,230,.6)'; g.font = '500 20px Inter,sans-serif'; g.fillText('NOW SHOWING', px + pw + 52, h * 0.34);
-    const dot = 0.5 + 0.5 * Math.sin(t * 2); g.fillStyle = `rgba(229,49,74,${dot})`; g.beginPath(); g.arc(px + pw + 40, h * 0.33, 6, 0, Math.PI * 2); g.fill();
+    /* the film fills the whole screen edge to edge (cover crop), like projection, not a slide */
+    const cover = Math.max(w / p.width, h / p.height);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(p, (w - p.width * cover) / 2, (h - p.height * cover) / 2, p.width * cover, p.height * cover);
+    const vg = g.createRadialGradient(w / 2, h / 2, h * 0.4, w / 2, h / 2, h * 1.0);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(0,0,0,.35)'); g.fillStyle = vg; g.fillRect(0, 0, w, h);
+    g.fillStyle = 'rgba(255,255,255,.03)'; for (let i = 0; i < 700; i++) g.fillRect(Math.random() * w, Math.random() * h, 2, 2);
     g.textAlign = 'center'; g.fillStyle = '#fff'; g.font = '600 34px Inter,sans-serif'; g.strokeStyle = 'rgba(0,0,0,.9)'; g.lineWidth = 6;
     const sub = 'If you can read this subtitle easily, the seat is fine.';
-    g.strokeText(sub, w / 2, h * 0.95); g.fillText(sub, w / 2, h * 0.95);
+    g.strokeText(sub, w / 2, h * 0.93); g.fillText(sub, w / 2, h * 0.93);
   }
 }

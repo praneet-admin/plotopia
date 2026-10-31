@@ -69,7 +69,7 @@ const ray = new THREE.Raycaster();
 /* ---------------- hall loading ---------------- */
 function loadHall(id, { keepUrl = false } = {}) {
   state.view?.dispose(); state.selected = state.pinned = null; state.picking = false; state.scores.clear();
-  state.hallId = id;
+  state.hallId = id; $('hallSelect').value = id;
   const view = buildHall(HALLS[id], scene, { lite: LITE }); state.view = view;
   view.screenMesh.material.map = media.texture; view.screenMesh.material.needsUpdate = true;
   scene.fog = new THREE.Fog(0x06070a, view.backZ * 2.5, view.backZ * 6);
@@ -108,8 +108,15 @@ function evaluate(seat, view, cols = 9, rows = 5) {
 }
 
 /* ---------------- seat map (DOM): back rows at the top, screen at the bottom ---------------- */
+function fitSeatMap() {
+  if (!state.view) return;
+  const perRow = Math.max(...state.view.seats.map(s => s.num)), panel = $('seatmap').clientWidth - 28;
+  const gap = perRow > 18 ? 3 : 4, size = Math.max(17, Math.min(27, Math.floor((panel - 20 - 44 - (perRow - 1) * gap) / perRow)));
+  $('rows').style.setProperty('--seat', size + 'px'); $('rows').style.setProperty('--gap', gap + 'px');
+}
+new ResizeObserver(fitSeatMap).observe($('seatmap'));
 function buildSeatMap(view) {
-  const rowsEl = $('rows'); rowsEl.innerHTML = '';
+  const rowsEl = $('rows'); rowsEl.innerHTML = ''; fitSeatMap();
   const byRow = new Map(); view.seats.forEach(s => (byRow.get(s.row) ?? byRow.set(s.row, []).get(s.row)).push(s));
   let lastCat = null;
   for (const row of [...byRow.keys()].reverse()) {
@@ -266,6 +273,7 @@ Object.values(HALLS).forEach(h => { const o = document.createElement('option'); 
 $('hallSelect').onchange = e => loadHall(e.target.value);
 document.querySelectorAll('.time').forEach(b => b.onclick = () => { document.querySelectorAll('.time').forEach(x => x.classList.remove('active')); b.classList.add('active'); });
 $('helpBtn').onclick = () => { $('coach').hidden = false; };
+$('moreBtn2').onclick = () => { const x = $('extraChips'); x.hidden = !x.hidden; $('moreBtn2').textContent = x.hidden ? 'More details' : 'Fewer details'; };
 $('qualityBtn').textContent = LITE ? 'Switch to full graphics' : 'Switch to lite graphics';
 $('qualityBtn').onclick = () => { try { localStorage.setItem('plotopia.lite', LITE ? '0' : '1'); } catch {} location.reload(); };
 $('coachBtn').onclick = () => { $('coach').hidden = true; try { localStorage.setItem('plotopia.coach', '1'); } catch {} };

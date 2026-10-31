@@ -11,7 +11,7 @@
 <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <meta name="theme-color" content="#121214">
-<link rel="stylesheet" href="style.css?v=a94a9ba7">
+<link rel="stylesheet" href="style.css?v=3aca5eae">
 </head>
 <body>
 <div id="app">
@@ -112,10 +112,13 @@
         <div class="chip"><span>Distance</span><b id="mDist"></b></div>
         <div class="chip"><span>Fills view</span><b id="mFov"></b></div>
         <div class="chip"><span>Off-centre</span><b id="mOff"></b></div>
-        <div class="chip"><span>Look-up</span><b id="mUp"></b></div>
         <div class="chip"><span>Clear of heads</span><b id="mVis"></b></div>
-        <div class="chip"><span>Next to you</span><b id="mNb"></b></div>
       </div>
+      <div class="chips extra" id="extraChips" hidden>
+        <div class="chip"><span>Look-up angle</span><b id="mUp"></b></div>
+        <div class="chip"><span>Seats next to you</span><b id="mNb"></b></div>
+      </div>
+      <button class="more" id="moreBtn2">More details</button>
     </section>
 
     <div id="legend">
@@ -140,6 +143,6 @@
     setTimeout(function () { if (box && !box.hidden && box.textContent.indexOf('Setting up') >= 0) fail('Still loading after 20 seconds. Check the connection: the 3D library loads from cdn.jsdelivr.net.'); }, 20000);
   })();
 </script>
-<script src="dist/app.js?v=998e0826" defer></script>
+<script src="dist/app.js?v=e0683537" defer></script>
 </body>
 </html>

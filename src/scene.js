@@ -64,18 +64,25 @@ const M = {
   downlight: new THREE.MeshBasicMaterial({ color: 0x3a2a1c }),
   exit: new THREE.MeshBasicMaterial({ map: exitTex }),
   rowLabel: new THREE.MeshBasicMaterial({ map: letterTex }),
-  person: new THREE.MeshStandardMaterial({ color: 0x141418, roughness: 0.95 }),
-  hair: new THREE.MeshStandardMaterial({ color: 0x0c0a0a, roughness: 1 }),
-  skin: new THREE.MeshStandardMaterial({ color: 0x3a2a24, roughness: 0.9 }),
+  cloth0: new THREE.MeshStandardMaterial({ color: 0x1b1d26, roughness: 0.95 }),
+  cloth1: new THREE.MeshStandardMaterial({ color: 0x3a2a2f, roughness: 0.95 }),
+  cloth2: new THREE.MeshStandardMaterial({ color: 0x24322c, roughness: 0.95 }),
+  cloth3: new THREE.MeshStandardMaterial({ color: 0x4a4038, roughness: 0.95 }),
+  cloth4: new THREE.MeshStandardMaterial({ color: 0x2a3550, roughness: 0.95 }),
+  skin0: new THREE.MeshStandardMaterial({ color: 0x8a5a3c, roughness: 0.75 }),
+  skin1: new THREE.MeshStandardMaterial({ color: 0x5c3a28, roughness: 0.75 }),
+  skin2: new THREE.MeshStandardMaterial({ color: 0xb8865e, roughness: 0.75 }),
+  hair0: new THREE.MeshStandardMaterial({ color: 0x0e0c0b, roughness: 0.9 }),
+  hair1: new THREE.MeshStandardMaterial({ color: 0x2a1d14, roughness: 0.9 }),
   speaker: new THREE.MeshStandardMaterial({ color: 0x0c0c0c, roughness: 0.6 }),
-  beam: new THREE.MeshBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: 0.06, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
-  dust: new THREE.PointsMaterial({ color: 0xdde8ff, size: 0.022, transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending }),
+  beam: new THREE.MeshBasicMaterial({ color: 0xcfe3ff, transparent: true, opacity: 0.018, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide }),
+  dust: new THREE.PointsMaterial({ color: 0xdde8ff, size: 0.018, transparent: true, opacity: 0.16, depthWrite: false, blending: THREE.AdditiveBlending }),
   selected: new THREE.MeshStandardMaterial({ color: 0xffd98a, emissive: 0xffb340, emissiveIntensity: 1.2, roughness: 0.6 }),
   pinned: new THREE.MeshStandardMaterial({ color: 0x9fd8ff, emissive: 0x3fb4ff, emissiveIntensity: 1.2, roughness: 0.6 }),
   ring: new THREE.MeshBasicMaterial({ color: 0xffb340, transparent: true, opacity: 0.9 }),
   proxy: new THREE.MeshBasicMaterial({ visible: false }),
 };
-const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'person', 'hair', 'skin', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
+const SHADOW_KEYS = new Set(['fabric', 'fabricPrime', 'leather', 'plastic', 'steel', 'cloth0', 'cloth1', 'cloth2', 'cloth3', 'cloth4', 'skin0', 'skin1', 'skin2', 'hair0', 'hair1', 'step', 'floor', 'stepNose', 'panelA', 'panelB', 'speaker']);
 
 export function buildHall(hall, scene, { lite = false } = {}) {
   if (lite) { M.leather = M.leatherLite; }   // clearcoat physical material is the costliest shader; skip it on weak GPUs
@@ -150,7 +157,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
   const coneGeo = new THREE.ConeGeometry((scr.w / 2) / 0.707, beamLen, 4, 1, true).rotateY(Math.PI / 4).translate(0, -beamLen / 2, 0);
   const beam = new THREE.Mesh(coneGeo, M.beam); beam.rotation.x = -Math.PI / 2; beam.scale.z = scr.h / scr.w;
   const beamGroup = new THREE.Group(); beamGroup.position.set(0, projY, projZ); beamGroup.lookAt(0, scr.cy, 0); beamGroup.add(beam); world.add(beamGroup);
-  const dustN = 220, dustPos = new Float32Array(dustN * 3);
+  const dustN = 120, dustPos = new Float32Array(dustN * 3);
   for (let i = 0; i < dustN; i++) {
     const t = Math.random(); const spread = t * scr.w * 0.45;
     dustPos[i * 3] = (Math.random() - 0.5) * 2 * spread; dustPos[i * 3 + 1] = projY + (scr.cy - projY) * t + (Math.random() - 0.5) * spread * scr.h / scr.w; dustPos[i * 3 + 2] = projZ * (1 - t);
@@ -178,6 +185,35 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     part(BOX(w - 0.2, 0.38, 0.12), 'plastic', 0, 0.19, 0.08);
     return (templates[cat] = { parts, w, d, soft });
   };
+  /* A seated person seen from behind: sloped shoulders, a slightly oval head, hair with some variety,
+     arms resting on the armrests, varied height, skin and clothing. Built from lathe and capsule shapes. */
+  const torsoProfile = new THREE.LatheGeometry([[0.0, 0.42], [0.2, 0.44], [0.21, 0.52], [0.17, 0.64], [0.19, 0.78], [0.225, 0.9], [0.2, 0.97], [0.07, 1.0], [0.0, 1.0]].map(([r, y]) => new THREE.Vector2(r, y)), 18).scale(1, 1, 0.62);
+  const headGeo = new THREE.SphereGeometry(0.1, 16, 14).scale(0.9, 1.08, 0.95);
+  const neckGeo = new THREE.CylinderGeometry(0.045, 0.055, 0.12, 10);
+  const armGeo = new THREE.CapsuleGeometry(0.042, 0.26, 3, 8);
+  const handGeo = new THREE.SphereGeometry(0.045, 8, 6).scale(1, 0.6, 1.2);
+  const hairCap = new THREE.SphereGeometry(0.106, 16, 10, 0, Math.PI * 2, 0, Math.PI * 0.72).scale(0.93, 1.06, 0.99);
+  const hairLong = new THREE.CylinderGeometry(0.1, 0.09, 0.3, 12, 1, false, Math.PI * 0.5, Math.PI).scale(0.95, 1, 0.8);
+  const bunGeo = new THREE.SphereGeometry(0.05, 10, 8);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296;
+  function stampPerson(s) {
+    const tall = (rnd() - 0.5) * 0.1, turn = (rnd() - 0.5) * 0.5, lean = (rnd() - 0.5) * 0.06, y = s.y + tall;
+    const cloth = 'cloth' + Math.floor(rnd() * 5), skin = 'skin' + Math.floor(rnd() * 3), hair = 'hair' + Math.floor(rnd() * 2), style = rnd();
+    const z = s.z + 0.02;
+    put(cloth, torsoProfile, s.x, y, z, 0, turn * 0.3);
+    put(skin, neckGeo, s.x + lean, y + 1.03, z);
+    put(skin, headGeo, s.x + lean, y + EYE_HEIGHT + 0.03, z, 0, turn);
+    if (style < 0.55) put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn);
+    else if (style < 0.8) { put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn); put(hair, hairLong, s.x + lean, y + EYE_HEIGHT - 0.1, z + 0.04, 0, turn); }
+    else { put(hair, hairCap, s.x + lean, y + EYE_HEIGHT + 0.03, z - 0.012, 0, turn); put(hair, bunGeo, s.x + lean, y + EYE_HEIGHT + 0.08, z + 0.08); }
+    for (const sx of [-1, 1]) {   // upper arms slope from the shoulders down and forward to the armrests
+      put(cloth, armGeo, s.x + sx * 0.24, y + 0.78, z - 0.08, 0.5, 0, sx * 0.12);
+      put(skin, handGeo, s.x + sx * 0.26, y + 0.66, z - 0.2);
+    }
+    const body = new THREE.Mesh(BOX(0.46, 0.64, 0.3), M.proxy); body.position.set(s.x, y + 0.8, z); body.userData.worldZ = s.z; body.userData.worldX = s.x; world.add(body); occluders.push(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), M.proxy); head.position.set(s.x + lean, y + EYE_HEIGHT + 0.03, z); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
+  }
   for (const s of seats) {
     const t = template(s.cat);
     for (const p of t.parts) put(p.key, p.geo, s.x + p.x, s.y + p.y, s.z + p.z, p.rx);
@@ -185,17 +221,7 @@ export function buildHall(hall, scene, { lite = false } = {}) {
     const pick = new THREE.Mesh(BOX(t.w, 1.2, t.d + 0.1), M.proxy); pick.position.set(s.x, s.y + 0.6, s.z); pick.userData.seat = s; world.add(pick); pickables.push(pick); s.mesh = pick;
     const backH = s.cat === 'recliner' ? 1.35 : 1.1;
     const back = new THREE.Mesh(BOX(t.w - 0.1, backH, 0.13), M.proxy); back.position.set(s.x, s.y + backH / 2, s.z + t.d / 2 - 0.05); back.userData.worldZ = back.position.z; back.userData.worldX = s.x; world.add(back); occluders.push(back);
-    if (s.sold) {
-      const lean = (Math.random() - 0.5) * 0.08, tall = (Math.random() - 0.5) * 0.07, y = s.y + tall;
-      put('person', new THREE.CapsuleGeometry(0.13, 0.34, 3, 8), s.x, y + 0.84, s.z + 0.02);
-      put('person', new THREE.CapsuleGeometry(0.075, 0.3, 3, 8), s.x, y + 1.0, s.z + 0.02, 0, 0, Math.PI / 2);
-      put('skin', new THREE.CylinderGeometry(0.045, 0.05, 0.08, 8), s.x + lean, y + 1.1, s.z + 0.02);
-      put('skin', new THREE.SphereGeometry(0.105, 12, 10), s.x + lean, y + EYE_HEIGHT + 0.04, s.z);
-      put('hair', new THREE.SphereGeometry(0.112, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), s.x + lean, y + EYE_HEIGHT + 0.05, s.z - 0.01);
-      /* one proxy per person: head and shoulders as a box plus a head sphere */
-      const body = new THREE.Mesh(BOX(0.44, 0.62, 0.28), M.proxy); body.position.set(s.x, y + 0.82, s.z + 0.02); body.userData.worldZ = s.z; body.userData.worldX = s.x; world.add(body); occluders.push(body);
-      const head = new THREE.Mesh(new THREE.SphereGeometry(0.115, 8, 6), M.proxy); head.position.set(s.x + lean, y + EYE_HEIGHT + 0.04, s.z); head.userData.worldZ = s.z; head.userData.worldX = s.x; world.add(head); occluders.push(head);
-    }
+    if (s.sold) stampPerson(s);
   }
 
   /* merge the bins */
